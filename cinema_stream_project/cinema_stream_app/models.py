@@ -50,6 +50,30 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ('user', 'movie')
 
+def register_validator(postData):
+    errors = {}
+    EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+    if len(postData['first_name']) < 2 or not postData['first_name'].isalpha():
+        errors['first_name'] = "First name must be at least 2 letters."
+
+    if len(postData['last_name']) < 2 or not postData['last_name'].isalpha():
+        errors['last_name'] = "Last name must be at least 2 letters."
+
+    if not EMAIL_REGEX.match(postData['email']):
+        errors['email'] = "Invalid email format."
+    elif User.objects.filter(email=postData['email']).exists():
+        errors['email_unique'] = "Email already registered."
+
+    if len(postData['password']) < 8:
+        errors['password'] = "Password must be at least 8 characters."
+
+    if postData['password'] != postData['confirm_pw']:
+        errors['confirm_pw'] = "Passwords do not match."
+
+    return errors
+
+
 def get_all_movies():
     return Movie.objects.all().order_by('-created_at')
 
