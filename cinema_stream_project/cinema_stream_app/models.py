@@ -49,3 +49,6 @@ class Favorite(models.Model):
     
     class Meta:
         unique_together = ('user', 'movie')
+
+def get_all_movies():
+    return Movie.objects.all().order_by('-created_at')
