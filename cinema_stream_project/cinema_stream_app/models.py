@@ -66,4 +66,24 @@ def remove_from_favorites(user, movie):
     Favorite.objects.filter(user=user, movie=movie).delete()
 
 def is_favorite(user, movie):
-    return Favorite.objects.filter(user=user, movie=movie).exists()    
+    return Favorite.objects.filter(user=user, movie=movie).exists()
+
+def create_review(user, movie, rating, comment):
+    review, created = Review.objects.update_or_create(
+        user=user, movie=movie,
+        defaults={'rating': rating, 'comment': comment}
+    )
+    update_movie_rating(movie)
+    return review
+
+def update_movie_rating(movie):
+    reviews = movie.reviews.all()
+    if reviews.exists():
+        avg = reviews.aggregate(models.Avg('rating'))['rating__avg']
+        count = reviews.count()
+        movie.average_rating = round(avg, 2)
+        movie.rating_count = count
+    else:
+        movie.average_rating = 0.00
+        movie.rating_count = 0
+    movie.save()
