@@ -85,6 +85,12 @@ def create_user(postData):
     )
     return user
 
+def authenticate_user(email, password):
+    user = User.objects.filter(email=email).first()
+    if user and bcrypt.checkpw(password.encode(), user.password.encode()):
+        return user
+    return None
+
 
 def get_all_movies():
     return Movie.objects.all().order_by('-created_at')
