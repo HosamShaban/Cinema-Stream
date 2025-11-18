@@ -42,3 +42,10 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ('movie', 'user')
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    
+    class Meta:
+        unique_together = ('user', 'movie')       
