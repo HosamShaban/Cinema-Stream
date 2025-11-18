@@ -87,3 +87,9 @@ def update_movie_rating(movie):
         movie.average_rating = 0.00
         movie.rating_count = 0
     movie.save()
+
+def search_movies(query):
+    return Movie.objects.filter(
+        models.Q(title__icontains=query) | 
+        models.Q(description__icontains=query)
+    )
