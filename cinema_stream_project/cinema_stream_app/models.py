@@ -55,3 +55,6 @@ def get_all_movies():
 
 def get_trending_movies():
     return Movie.objects.all().order_by('-rating_count')[:10]
+
+def get_movie_by_slug(slug):
+    return Movie.objects.get(slug=slug)
