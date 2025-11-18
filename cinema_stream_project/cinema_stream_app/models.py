@@ -64,3 +64,6 @@ def add_to_favorites(user, movie):
 
 def remove_from_favorites(user, movie):
     Favorite.objects.filter(user=user, movie=movie).delete()
+
+def is_favorite(user, movie):
+    return Favorite.objects.filter(user=user, movie=movie).exists()    
