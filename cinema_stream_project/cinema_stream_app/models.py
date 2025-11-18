@@ -61,3 +61,6 @@ def get_movie_by_slug(slug):
 
 def add_to_favorites(user, movie):
     return Favorite.objects.get_or_create(user=user, movie=movie)
+
+def remove_from_favorites(user, movie):
+    Favorite.objects.filter(user=user, movie=movie).delete()
