@@ -58,3 +58,6 @@ def get_trending_movies():
 
 def get_movie_by_slug(slug):
     return Movie.objects.get(slug=slug)
+
+def add_to_favorites(user, movie):
+    return Favorite.objects.get_or_create(user=user, movie=movie)
