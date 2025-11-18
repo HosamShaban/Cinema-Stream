@@ -48,4 +48,4 @@ class Favorite(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     
     class Meta:
-        unique_together = ('user', 'movie')       
+        unique_together = ('user', 'movie')
