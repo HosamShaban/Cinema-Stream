@@ -91,6 +91,11 @@ def authenticate_user(email, password):
         return user
     return None
 
+def get_logged_user(request):
+    if "user_id" in request.session:
+        return User.objects.get(id=request.session['user_id'])
+    return None
+
 
 def get_all_movies():
     return Movie.objects.all().order_by('-created_at')
