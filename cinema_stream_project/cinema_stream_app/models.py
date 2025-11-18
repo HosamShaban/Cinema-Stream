@@ -93,3 +93,17 @@ def search_movies(query):
         models.Q(title__icontains=query) | 
         models.Q(description__icontains=query)
     )
+
+def filter_movies(genre=None, year=None, content_type=None):
+    filters = {}
+    if genre:
+        filters['genres__slug'] = genre
+    if year:
+        try:
+            filters['release_date__year'] = int(year)
+        except ValueError:
+            pass
+    if content_type in ['movie', 'series']:
+        filters['content_type'] = content_type
+
+    return Movie.objects.filter(**filters).distinct()
