@@ -1,3 +1,5 @@
+import re
+import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -72,6 +74,16 @@ def register_validator(postData):
         errors['confirm_pw'] = "Passwords do not match."
 
     return errors
+
+def create_user(postData):
+    pw_hash = bcrypt.hashpw(postData['password'].encode(), bcrypt.gensalt()).decode()
+    user = User.objects.create(
+        first_name=postData['first_name'],
+        last_name=postData['last_name'],
+        email=postData['email'],
+        password=pw_hash
+    )
+    return user
 
 
 def get_all_movies():
