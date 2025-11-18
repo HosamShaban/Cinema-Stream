@@ -52,3 +52,6 @@ class Favorite(models.Model):
 
 def get_all_movies():
     return Movie.objects.all().order_by('-created_at')
+
+def get_trending_movies():
+    return Movie.objects.all().order_by('-rating_count')[:10]
