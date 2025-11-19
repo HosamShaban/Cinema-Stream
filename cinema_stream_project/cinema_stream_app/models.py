@@ -1,3 +1,4 @@
+from datetime import date
 import re
 import bcrypt
 from django.db import models
@@ -60,9 +61,10 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ('user', 'movie')
 
-def register_validator(postData):
+def register_validator(postData,avatar_file=None):
     errors = {}
     EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    today = date.today()
 
     if len(postData['first_name']) < 2 or not postData['first_name'].isalpha():
         errors['first_name'] = "First name must be at least 2 letters."
