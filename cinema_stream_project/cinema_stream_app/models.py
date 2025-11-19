@@ -83,6 +83,19 @@ def register_validator(postData,avatar_file=None):
     if postData['password'] != postData['confirm_pw']:
         errors['confirm_pw'] = "Passwords do not match."
 
+    try:
+        dob = postData.get('date_of_birth')
+        if dob:
+            year, month, day = map(int, dob.split('-'))
+            dob_date = date(year, month, day)
+            age = today.year - dob_date.year - ((today.month, today.day) < (month, day))
+            if age < 15:
+                errors['date_of_birth'] = "You must be at least 15 years old."
+            if dob_date > today:
+                errors['date_of_birth'] = "Date of birth cannot be in the future."
+    except (ValueError, AttributeError):
+        errors['date_of_birth'] = "Invalid date format."    
+
     return errors
 
 def create_user(postData):
