@@ -94,7 +94,13 @@ def register_validator(postData,avatar_file=None):
             if dob_date > today:
                 errors['date_of_birth'] = "Date of birth cannot be in the future."
     except (ValueError, AttributeError):
-        errors['date_of_birth'] = "Invalid date format."    
+        errors['date_of_birth'] = "Invalid date format."
+
+    if avatar_file:
+        if avatar_file.size > 5 * 1024 * 1024:
+            errors['avatar'] = "Image size should not exceed 5MB."
+        if not avatar_file.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            errors['avatar'] = "Only PNG, JPG, JPEG, GIF allowed."       
 
     return errors
 
