@@ -104,13 +104,19 @@ def register_validator(postData,avatar_file=None):
 
     return errors
 
-def create_user(postData):
+def create_user(postData , avatar_file=None):
     pw_hash = bcrypt.hashpw(postData['password'].encode(), bcrypt.gensalt()).decode()
     user = User.objects.create(
         first_name=postData['first_name'],
         last_name=postData['last_name'],
         email=postData['email'],
         password=pw_hash
+    )
+
+    UserProfile.objects.create(
+        user=user,
+        date_of_birth=postData.get('date_of_birth'),
+        avatar=avatar_file if avatar_file else None
     )
     return user
 
