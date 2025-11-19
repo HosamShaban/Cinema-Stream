@@ -1,3 +1,4 @@
+from datetime import date
 import re
 import bcrypt
 from django.db import models
@@ -33,6 +34,14 @@ class Movie(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    date_of_birth = models.DateField(null=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class Review(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -52,9 +61,10 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ('user', 'movie')
 
-def register_validator(postData):
+def register_validator(postData,avatar_file=None):
     errors = {}
     EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    today = date.today()
 
     if len(postData['first_name']) < 2 or not postData['first_name'].isalpha():
         errors['first_name'] = "First name must be at least 2 letters."
@@ -73,15 +83,40 @@ def register_validator(postData):
     if postData['password'] != postData['confirm_pw']:
         errors['confirm_pw'] = "Passwords do not match."
 
+    try:
+        dob = postData.get('date_of_birth')
+        if dob:
+            year, month, day = map(int, dob.split('-'))
+            dob_date = date(year, month, day)
+            age = today.year - dob_date.year - ((today.month, today.day) < (month, day))
+            if age < 15:
+                errors['date_of_birth'] = "You must be at least 15 years old."
+            if dob_date > today:
+                errors['date_of_birth'] = "Date of birth cannot be in the future."
+    except (ValueError, AttributeError):
+        errors['date_of_birth'] = "Invalid date format."
+
+    if avatar_file:
+        if avatar_file.size > 5 * 1024 * 1024:
+            errors['avatar'] = "Image size should not exceed 5MB."
+        if not avatar_file.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            errors['avatar'] = "Only PNG, JPG, JPEG, GIF allowed."       
+
     return errors
 
-def create_user(postData):
+def create_user(postData , avatar_file=None):
     pw_hash = bcrypt.hashpw(postData['password'].encode(), bcrypt.gensalt()).decode()
     user = User.objects.create(
         first_name=postData['first_name'],
         last_name=postData['last_name'],
         email=postData['email'],
         password=pw_hash
+    )
+
+    UserProfile.objects.create(
+        user=user,
+        date_of_birth=postData.get('date_of_birth'),
+        avatar=avatar_file if avatar_file else None
     )
     return user
 
