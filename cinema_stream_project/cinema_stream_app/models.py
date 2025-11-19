@@ -1,3 +1,5 @@
+import re
+import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -49,3 +51,106 @@ class Favorite(models.Model):
     
     class Meta:
         unique_together = ('user', 'movie')
+
+def register_validator(postData):
+    errors = {}
+    EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+    if len(postData['first_name']) < 2 or not postData['first_name'].isalpha():
+        errors['first_name'] = "First name must be at least 2 letters."
+
+    if len(postData['last_name']) < 2 or not postData['last_name'].isalpha():
+        errors['last_name'] = "Last name must be at least 2 letters."
+
+    if not EMAIL_REGEX.match(postData['email']):
+        errors['email'] = "Invalid email format."
+    elif User.objects.filter(email=postData['email']).exists():
+        errors['email_unique'] = "Email already registered."
+
+    if len(postData['password']) < 8:
+        errors['password'] = "Password must be at least 8 characters."
+
+    if postData['password'] != postData['confirm_pw']:
+        errors['confirm_pw'] = "Passwords do not match."
+
+    return errors
+
+def create_user(postData):
+    pw_hash = bcrypt.hashpw(postData['password'].encode(), bcrypt.gensalt()).decode()
+    user = User.objects.create(
+        first_name=postData['first_name'],
+        last_name=postData['last_name'],
+        email=postData['email'],
+        password=pw_hash
+    )
+    return user
+
+def authenticate_user(email, password):
+    user = User.objects.filter(email=email).first()
+    if user and bcrypt.checkpw(password.encode(), user.password.encode()):
+        return user
+    return None
+
+def get_logged_user(request):
+    if "user_id" in request.session:
+        return User.objects.get(id=request.session['user_id'])
+    return None
+
+
+def get_all_movies():
+    return Movie.objects.all().order_by('-created_at')
+
+def get_trending_movies():
+    return Movie.objects.all().order_by('-rating_count')[:10]
+
+def get_movie_by_slug(slug):
+    return Movie.objects.get(slug=slug)
+
+def add_to_favorites(user, movie):
+    return Favorite.objects.get_or_create(user=user, movie=movie)
+
+def remove_from_favorites(user, movie):
+    Favorite.objects.filter(user=user, movie=movie).delete()
+
+def is_favorite(user, movie):
+    return Favorite.objects.filter(user=user, movie=movie).exists()
+
+def create_review(user, movie, rating, comment):
+    review, created = Review.objects.update_or_create(
+        user=user, movie=movie,
+        defaults={'rating': rating, 'comment': comment}
+    )
+    update_movie_rating(movie)
+    return review
+
+def update_movie_rating(movie):
+    reviews = movie.reviews.all()
+    if reviews.exists():
+        avg = reviews.aggregate(models.Avg('rating'))['rating__avg']
+        count = reviews.count()
+        movie.average_rating = round(avg, 2)
+        movie.rating_count = count
+    else:
+        movie.average_rating = 0.00
+        movie.rating_count = 0
+    movie.save()
+
+def search_movies(query):
+    return Movie.objects.filter(
+        models.Q(title__icontains=query) | 
+        models.Q(description__icontains=query)
+    )
+
+def filter_movies(genre=None, year=None, content_type=None):
+    filters = {}
+    if genre:
+        filters['genres__slug'] = genre
+    if year:
+        try:
+            filters['release_date__year'] = int(year)
+        except ValueError:
+            pass
+    if content_type in ['movie', 'series']:
+        filters['content_type'] = content_type
+
+    return Movie.objects.filter(**filters).distinct()
