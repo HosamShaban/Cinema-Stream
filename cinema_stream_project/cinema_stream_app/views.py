@@ -1,6 +1,6 @@
-from django.shortcuts import render , redirect
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render , redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from . import models
 
 def home(request):
@@ -132,3 +132,42 @@ def add_review(request, slug):
 
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
+
+def api_toggle_favorite(request):
+    if request.method != "POST":
+        return JsonResponse({
+            'success': False,
+            'message': 'Method not allowed. Use POST.'
+        }, status=405)
+
+    user = models.get_logged_user(request)
+    if not user:
+        return JsonResponse({
+            'success': False,
+            'message': 'Please login to continue.'
+        }, status=401)
+
+    slug = request.POST.get('slug')
+    if not slug:
+        return JsonResponse({
+            'success': False,
+            'message': 'Movie slug is required.'
+        }, status=400)
+
+    movie = get_object_or_404(models.Movie, slug=slug)
+    favorite, created = models.Favorite.objects.get_or_create(user=user, movie=movie)
+    
+    if not created:
+        favorite.delete()
+        action = "removed"
+        is_favorite = False
+    else:
+        action = "added"
+        is_favorite = True
+    return JsonResponse({
+        'success': True,
+        'is_favorite': is_favorite,
+        'action': action,
+        'total_favorites': movie.favorite_set.count(),
+        'message': f"Movie {action} to favorites successfully!"
+    })
