@@ -129,3 +129,6 @@ def add_review(request, slug):
         else:
             messages.error(request, "Please provide both rating and comment.")
     return redirect('movie_detail', slug=slug)
+
+def about(request):
+    return render(request, 'about.html', {'page_title': 'About Us'})
