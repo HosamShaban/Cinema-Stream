@@ -37,3 +37,22 @@ def browse(request):
         'page_title': 'Browse Movies & Series'
     }
     return render(request, 'browse.html', context)
+
+def movie_detail(request, slug):
+    movie = models.get_movie_by_slug(slug)
+
+    is_fav = False
+    user_review = None
+
+    if 'user_id' in request.session:
+        user = models.get_logged_user(request)
+        is_fav = models.is_favorite(user, movie)
+        user_review = movie.reviews.filter(user=user).first()
+
+    context = {
+        'movie': movie,
+        'is_favorite': is_fav,
+        'user_review': user_review,
+        'page_title': movie.title
+    }
+    return render(request, 'movie_detail.html', context)
