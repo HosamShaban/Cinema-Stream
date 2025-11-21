@@ -86,3 +86,23 @@ def login_view(request):
         else:
             messages.error(request, "Invalid email or password.")
     return render(request, 'login.html')
+
+def logout_view(request):
+    request.session.flush()
+    messages.success(request, "You have been logged out.")
+    return redirect('home')
+
+
+def profile(request):
+    user = request.user
+    profile = user.profile
+    favorites = models.Favorite.objects.filter(user=user).select_related('movie')
+    reviews = models.Review.objects.filter(user=user).select_related('movie')
+
+    context = {
+        'profile': profile,
+        'favorites': favorites,
+        'reviews': reviews,
+        'page_title': 'My Profile'
+    }
+    return render(request, 'profile.html', context)
