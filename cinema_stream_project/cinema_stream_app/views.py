@@ -116,3 +116,16 @@ def toggle_favorite(request, slug):
         models.add_to_favorites(request.user, movie)
         messages.success(request, f"Added {movie.title} to favorites!")
     return redirect('movie_detail', slug=slug)
+
+def add_review(request, slug):
+    movie = models.get_movie_by_slug(slug)
+    if request.method == "POST":
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+
+        if rating and comment:
+            models.create_review(request.user, movie, int(rating), comment)
+            messages.success(request, "Thank you! Your review has been submitted.")
+        else:
+            messages.error(request, "Please provide both rating and comment.")
+    return redirect('movie_detail', slug=slug)
