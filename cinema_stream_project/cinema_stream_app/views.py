@@ -106,3 +106,13 @@ def profile(request):
         'page_title': 'My Profile'
     }
     return render(request, 'profile.html', context)
+
+def toggle_favorite(request, slug):
+    movie = models.get_movie_by_slug(slug)
+    if models.is_favorite(request.user, movie):
+        models.remove_from_favorites(request.user, movie)
+        messages.info(request, f"Removed {movie.title} from favorites.")
+    else:
+        models.add_to_favorites(request.user, movie)
+        messages.success(request, f"Added {movie.title} to favorites!")
+    return redirect('movie_detail', slug=slug)
