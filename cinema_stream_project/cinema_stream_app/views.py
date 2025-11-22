@@ -10,7 +10,7 @@ def home(request):
     context = {
         'trending_movies': trending,
         'latest_movies': latest,
-        'page_title': 'Cinema Stream - Home'
+        'page_title': 'Cinema Stream'
     }
     return render(request, 'home.html', context)
 
