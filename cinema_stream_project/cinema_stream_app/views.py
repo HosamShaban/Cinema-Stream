@@ -117,6 +117,25 @@ def profile(request):
     }
     return render(request, 'profile.html', context)
 
+def edit_profile(request):
+    user = models.get_logged_user(request)
+    if not user:
+        messages.error(request, "Please login first.")
+        return redirect('login')
+
+    if request.method == "POST":
+        avatar_file = request.FILES.get('avatar')
+        errors = models.update_profile_validator(request.POST, avatar_file=avatar_file)
+        if errors:
+            for key, value in errors.items():
+                messages.error(request, value)
+        else:
+            models.update_user_profile(user, request.POST, avatar_file=avatar_file)
+            messages.success(request, "Profile updated successfully.")
+            return redirect('profile')
+
+    return render(request, 'edit_profile.html', {'profile': user.profile})
+
 
 def toggle_favorite(request, slug):
     user = models.get_logged_user(request)
