@@ -44,6 +44,13 @@
 
 {% block scripts %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.querySelector('#register .is-invalid') || 
+        document.querySelector('#register').querySelector('form').querySelector('.text-danger')) {
+        const registerTab = new bootstrap.Tab(document.querySelector('#register-tab'));
+        registerTab.show();
+    }
+});
 document.querySelectorAll('.favorite-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const slug = this.dataset.slug;

@@ -58,6 +58,8 @@ def movie_detail(request, slug):
     return render(request, 'movie_detail.html', context)
 
 def register(request):
+    active_tab = 'register'
+
     if request.method == "POST":
         avatar_file = request.FILES.get('avatar')
         errors = models.register_validator(request.POST, avatar_file=avatar_file)
@@ -70,10 +72,13 @@ def register(request):
             request.session['user_id'] = user.id
             messages.success(request, f"Welcome {user.first_name}! Account created successfully.")
             return redirect('home')
-    return render(request, 'auth.html')
+
+    return render(request, 'auth.html', {'active_tab': active_tab})
 
 
 def login_view(request):
+    active_tab = 'login'
+
     if request.method == "POST":
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -85,7 +90,8 @@ def login_view(request):
             return redirect('home')
         else:
             messages.error(request, "Invalid email or password.")
-    return render(request, 'auth.html')
+
+    return render(request, 'auth.html', {'active_tab': active_tab})
 
 def logout_view(request):
     request.session.flush()

@@ -1,43 +1,73 @@
 {% extends 'index.html' %}
-{% block title %}Login / Register{% endblock %}
+{% block title %}Cinema Stream - Login & Register{% endblock %}
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h1 class="text-center mb-5">Cinema Stream</h1>
-            <ul class="nav nav-tabs mb-4" id="authTab" role="tablist">
-                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#login">Login</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#register">Register</a></li>
+        <div class="col-md-8 col-lg-6">
+            <h1 class="text-center mb-5 display-4">Cinema Stream</h1>
+            <ul class="nav nav-tabs mb-4 justify-content-center" id="authTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'login' or not active_tab %}active{% endif %}"
+                            id="login-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#login"
+                            type="button"
+                            role="tab">
+                        Login
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'register' %}active{% endif %}"
+                            id="register-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#register"
+                            type="button"
+                            role="tab">
+                        Sign Up
+                    </button>
+                </li>
             </ul>
 
-            <div class="tab-content">
-                <div class="tab-pane active" id="login">
+            <div class="tab-content p-4 bg-dark rounded-3">
+                <div class="tab-pane fade {% if active_tab == 'login' or not active_tab %}show active{% endif %}"
+                     id="login" role="tabpanel">
                     <form method="post" action="{% url 'login' %}">
                         {% csrf_token %}
-                        <input type="email" name="	email" class="form-control mb-3" placeholder="Email" required>
+                        <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
                         <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
-                        <button class="btn btn-danger w-100">Login</button>
+                        <button class="btn btn-danger w-100 py-3">Login</button>
                     </form>
                 </div>
 
-                <div class="tab-pane" id="register">
+                <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}"
+                     id="register" role="tabpanel">
                     <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="row">
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <input type="text" name="first_name" class="form-control mb-3" placeholder="First Name" required>
-                                <input type="text" name="last_name" class="form-control mb-3" placeholder="Last Name" required>
+                                <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
                             </div>
                             <div class="col-md-6">
-                                <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
-                                <input type="date" name="date_of_birth" class="form-control mb-3" required>
+                                <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                            </div>
+                            <div class="col-12">
+                                <input type="email" name="email" class="form-control" placeholder="Email" required>
+                            </div>
+                            <div class="col-12">
+                                <input type="date" name="date_of_birth" class="form-control" required>
+                            </div>
+                            <div class="col-12">
+                                <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
+                            </div>
+                            <div class="col-12">
+                                <input type="password" name="confirm_pw" class="form-control" placeholder="Confirm Password" required>
+                            </div>
+                              <div class="col-12">
+                                <label class="form-label text-white-90">Avatar (Optional)</label>
+                                <input type="file" name="avatar" class="form-control" accept="image/*">
                             </div>
                         </div>
-                        <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
-                        <input type="password" name="confirm_pw" class="form-control mb-3" placeholder="Confirm Password" required>
-                        <label>Avatar</label>
-                        <input type="file" name="avatar" class="form-control mb-3" accept="image/*">
-                        <button class="btn btn-danger w-100">Register</button>
+                        <button class="btn btn-danger w-100 py-3 mt-4">Create Account</button>
                     </form>
                 </div>
             </div>
