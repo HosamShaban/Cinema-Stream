@@ -1,0 +1,101 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block title %}Login / Register{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 bg-dark text-white p-4 rounded shadow">
+            <ul class="nav nav-tabs mb-4" id="authTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'login' %}active{% endif %}" data-bs-toggle="tab"
+                        href="#login">
+                        Login
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'register' %}active{% endif %}" data-bs-toggle="tab"
+                        href="#register">
+                        Sign Up
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+
+                <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" id="login">
+
+                    {% if messages %}
+                    {% for msg in messages %}
+                    {% if "login" in msg.extra_tags %}
+                    {% if "error" in msg.tags %}
+                    <div class="alert alert-danger p-2">{{ msg }}</div>
+                    {% elif "success" in msg.tags %}
+                    <div class="alert alert-success p-2">{{ msg }}</div>
+                    {% else %}
+                    <div class="alert alert-info p-2">{{ msg }}</div>
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
+                        <input type="password" name="password" class="form-control mb-3" placeholder="Password"
+                            required>
+
+                        <button class="btn btn-danger w-100">Login</button>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" id="register">
+
+                    {% if messages %}
+                    {% for msg in messages %}
+                    {% if "register" in msg.extra_tags %}
+                    {% if "error" in msg.tags %}
+                    <div class="alert alert-danger p-2">{{ msg }}</div>
+                    {% elif "success" in msg.tags %}
+                    <div class="alert alert-success p-2">{{ msg }}</div>
+                    {% else %}
+                    <div class="alert alert-info p-2">{{ msg }}</div>
+                    {% endif %} {% endif %}
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" name="first_name" class="form-control mb-3" placeholder="First Name"
+                                    required>
+                                <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <input type="text" name="last_name" class="form-control mb-3" placeholder="Last Name"
+                                    required>
+                                <input type="date" name="date_of_birth" class="form-control mb-3" required>
+                            </div>
+                        </div>
+
+                        <input type="password" name="password" class="form-control mb-3" placeholder="Password"
+                            required>
+                        <input type="password" name="confirm_pw" class="form-control mb-3"
+                            placeholder="Confirm Password" required>
+
+                        <label class="mb-1">Avatar</label>
+                        <input type="file" name="avatar" class="form-control mb-3" accept="image/*">
+
+                        <button class="btn btn-success w-100">Sign Up</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

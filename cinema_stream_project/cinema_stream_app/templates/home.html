@@ -1,0 +1,56 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Cinema Stream - Home{% endblock %}
+
+{% block content %}
+{% if featured %}
+<div class="hero text-center" style="background:linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)), url('{{ featured.backdrop.url }}') center/cover; padding:80px 0;">
+  <div class="container">
+    <h1 class="display-4">{{ featured.title }}</h1>
+    <p class="lead">★★★★☆ {{ featured.overall_rating }} | {{ featured.release_year.year }} | {{ featured.duration }} min</p>
+    <a href="{% url 'movie_detail' featured.slug %}" class="btn btn-danger btn-lg">Play Trailer</a>
+    <button class="btn btn-outline-light btn-lg ms-3 favorite-btn" data-slug="{{ featured.slug }}">
+      {% if featured in user_favorites %}Remove from Favorites{% else %}Add to Favorites{% endif %}
+    </button>
+  </div>
+</div>
+{% endif %}
+
+<div class="container py-5">
+  <h3>Trending Now</h3>
+  <div class="row row-cols-2 row-cols-md-5 g-4">
+    {% for movie in trending %}
+    <div class="col">
+      <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none text-white">
+        {% if movie.poster %}<img src="{{ movie.poster.url }}" class="img-fluid rounded movie-card" alt="{{ movie.title }}">{% endif %}
+        <p class="text-center mt-2 small">{{ movie.title }}</p>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h3 class="mt-5">Genres</h3>
+  <div class="d-flex flex-wrap gap-2">
+    {% for genre in genres %}
+    <a href="{% url 'browse' %}?genre={{ genre.slug }}" class="btn btn-outline-light btn-sm">{{ genre.name }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$('.favorite-btn').on('click', function(){
+  const slug = $(this).data('slug');
+  const btn = $(this);
+  $.post("{% url 'api_toggle_favorite' %}", {slug: slug, csrfmiddlewaretoken: '{{ csrf_token }}'})
+    .done(function(data){
+      if(data.success){
+        btn.text(data.is_favorite ? 'Remove from Favorites' : 'Add to Favorites');
+      } else if (data.message) {
+        alert(data.message);
+      }
+    });
+});
+</script>
+{% endblock %}

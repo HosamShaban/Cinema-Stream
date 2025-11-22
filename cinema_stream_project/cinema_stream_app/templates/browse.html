@@ -1,0 +1,68 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Browse{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row">
+    <div class="col-md-3">
+      <h5>Filters</h5>
+      <form id="filters" method="get">
+        <div class="mb-2">
+          <label>Genre</label>
+          <select name="genre" class="form-select">
+            <option value="">All</option>
+            {% for g in genres %}<option value="{{ g.slug }}" {% if request.GET.genre == g.slug %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label>Year</label>
+          <input name="year" class="form-control" value="{{ request.GET.year }}">
+        </div>
+        <div class="mb-2">
+          <label>Type</label>
+          <select name="type" class="form-select">
+            <option value="">All</option>
+            <option value="movie" {% if request.GET.type == 'movie' %}selected{% endif %}>Movie</option>
+            <option value="series" {% if request.GET.type == 'series' %}selected{% endif %}>Series</option>
+          </select>
+        </div>
+        <button class="btn btn-primary">Apply</button>
+      </form>
+    </div>
+
+    <div class="col-md-9">
+      <div id="results" class="row row-cols-1 row-cols-md-3 g-4">
+        {% for movie in movies %}
+        <div class="col">
+          <div class="card bg-secondary text-white h-100">
+            {% if movie.poster %}<img src="{{ movie.poster.url }}" class="card-img-top" style="height:220px;object-fit:cover;">{% endif %}
+            <div class="card-body">
+              <h5 class="card-title">{{ movie.title }}</h5>
+              <p class="small">★★★★☆ {{ movie.overall_rating }} • {{ movie.release_year.year }}</p>
+              <a href="{% url 'movie_detail' movie.slug %}" class="btn btn-sm btn-light">View</a>
+              <button class="btn btn-sm btn-outline-light add-fav" data-slug="{{ movie.slug }}">❤</button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mt-3 text-center"><button id="loadMore" class="btn btn-outline-light">Load More</button></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$('#filters').on('change', function(e){
+});
+$('.add-fav').on('click', function(){
+  const slug = $(this).data('slug'), btn = $(this);
+  $.post("{% url 'api_toggle_favorite' %}", {slug:slug, csrfmiddlewaretoken: '{{ csrf_token }}'})
+    .done(function(data){
+      if(data.success) btn.text(data.is_favorite ? '♥' : '♡');
+    });
+});
+</script>
+{% endblock %}
