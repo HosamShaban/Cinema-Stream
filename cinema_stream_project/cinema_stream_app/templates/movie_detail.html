@@ -1,0 +1,38 @@
+{% extends 'index.html' %}
+{% block content %}
+<div class="container py-5">
+    <a href="javascript:history.back()" class="btn btn-outline-light mb-3">Back</a>
+    <h1>{{ movie.title }} ({{ movie.release_year.year }})</h1>
+
+    <div class="row">
+        <div class="col-md-4">
+            <img src="{{ movie.poster.url }}" class="img-fluid rounded" alt="{{ movie.title }}">
+        </div>
+        <div class="col-md-8">
+            <p>★★★★☆ {{ movie.overall_rating }} ({{ movie.rating_count }} reviews)</p>
+            <p>{{ movie.genres.all|join:", " }} | {{ movie.duration }} min | {{ movie.language }}</p>
+            <div class="my-4">
+                <a href="{{ movie.trailer_url }}" target="_blank" class="btn btn-danger">Play Trailer</a>
+                <button class="btn btn-outline-light favorite-btn ms-3" data-slug="{{ movie.slug }}">
+                    {% if is_favorite %} Remove from Favorites{% else %} Add to Favorites{% endif %}
+                </button>
+            </div>
+            <h5>Synopsis</h5>
+            <p>{{ movie.description }}</p>
+
+            <h5 class="mt-5">Write a Review</h5>
+            <form action="{% url 'add_review' movie.slug %}" method="post">
+                {% csrf_token %}
+                <div class="star-rating mb-3">
+                    {% for i in "12345" %}
+                    <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}">
+                    <label for="star{{ forloop.counter }}">Star</label>
+                    {% endfor %}
+                </div>
+                <textarea name="comment" class="form-control bg-dark text-white" rows="4" required></textarea>
+                <button class="btn btn-danger mt-3">Submit Review</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
