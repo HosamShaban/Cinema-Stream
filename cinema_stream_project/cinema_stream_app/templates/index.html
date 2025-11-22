@@ -6,6 +6,7 @@
   <title>{% block title %}Cinema Stream{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-font/6.4.2/css/all.min.css" integrity="sha512..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="{% static 'css/site.css' %}" rel="stylesheet">
   <style>
     html, body {
@@ -29,6 +30,7 @@
 <body class="bg-dark text-white">
 <nav class="navbar navbar-expand-lg navbar-dark bg-black">
   <div class="container">
+  <i class="fa-solid fa-film fa-lg me-2" style="color:white;"></i>
     <a class="navbar-brand" href="/">{% block brand %}Cinema Stream{% endblock %}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navcollapse">
       <span class="navbar-toggler-icon"></span>

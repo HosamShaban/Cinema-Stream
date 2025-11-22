@@ -66,11 +66,11 @@ def register(request):
 
         if errors:
             for key, value in errors.items():
-                messages.error(request, value)
+                messages.error(request, value, extra_tags='register')
         else:
             user = models.create_user(request.POST, avatar_file=avatar_file)
             request.session['user_id'] = user.id
-            messages.success(request, f"Welcome {user.first_name}! Account created successfully.")
+            messages.success(request, f"Welcome {user.first_name}! Account created successfully.", extra_tags='register')
             return redirect('home')
 
     return render(request, 'auth.html', {'active_tab': active_tab})
@@ -86,10 +86,10 @@ def login_view(request):
 
         if user:
             request.session['user_id'] = user.id
-            messages.success(request, f"Welcome back, {user.first_name}!")
+            messages.success(request, f"Welcome back, {user.first_name}!", extra_tags='login')
             return redirect('home')
         else:
-            messages.error(request, "Invalid email or password.")
+            messages.error(request, "Invalid email or password.", extra_tags='login')
 
     return render(request, 'auth.html', {'active_tab': active_tab})
 
@@ -124,13 +124,30 @@ def edit_profile(request):
         return redirect('login')
 
     if request.method == "POST":
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
         avatar_file = request.FILES.get('avatar')
-        errors = models.update_profile_validator(request.POST, avatar_file=avatar_file)
+
+        errors = {}
+        if not first_name:
+            errors['first_name'] = "First name is required."
+        if not last_name:
+            errors['last_name'] = "Last name is required."
+        if not email:
+            errors['email'] = "Email is required."
+
         if errors:
             for key, value in errors.items():
                 messages.error(request, value)
         else:
-            models.update_user_profile(user, request.POST, avatar_file=avatar_file)
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = email
+            if avatar_file:
+                user.profile.avatar = avatar_file
+            user.save()
+            user.profile.save()
             messages.success(request, "Profile updated successfully.")
             return redirect('profile')
 

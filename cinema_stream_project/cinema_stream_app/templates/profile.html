@@ -3,34 +3,57 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="row">
-    <div class="col-md-4 text-center">
-      {% if profile.avatar %}<img src="{{ profile.avatar.url }}" class="img-fluid rounded-circle mb-3" style="width:160px;height:160px;object-fit:cover;">{% endif %}
-      <h4>{{ profile.user.first_name }} {{ profile.user.last_name }}</h4>
-      <p class="text-muted">{{ profile.user.email }}</p>
-      <a href="{% url 'edit_profile' %}" class="btn btn-outline-light btn-sm">Edit Profile</a>
-    </div>
-    <div class="col-md-8">
-      <h5>Favorites ({{ favorites|length }})</h5>
-      <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
-        {% for f in favorites %}
+<div class="col-md-4 text-center mb-4">
+  {% if profile.avatar %}
+    <img src="{{ profile.avatar.url }}" class="img-fluid rounded-circle mb-3" style="width:160px;height:160px;object-fit:cover;">
+  {% else %}
+    <div class="bg-secondary rounded-circle mb-3" style="width:160px;height:160px;line-height:160px;color:white;">Avatar</div>
+  {% endif %}
+  <h4>{{ profile.user.first_name }} {{ profile.user.last_name }} <small class="text-muted">@{{ profile.user.username }}</small></h4>
+  <a href="{% url 'edit_profile' %}" class="btn btn-primary mt-2">Edit</a>
+
+  <ul class="list-group list-group-flush text-start mt-3">
+    <li class="list-group-item bg-black text-white"><strong>Email:</strong> {{ profile.user.email }}</li>
+    <li class="list-group-item bg-black text-white"><strong>Joined:</strong> {{ profile.user.date_joined|date:"F j, Y" }}</li>
+  </ul>
+</div>
+
+<div class="col-md-8">
+  <h5>Favorites ({{ favorites|length }})</h5>
+  {% if favorites %}
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+      {% for f in favorites %}
         <div class="col">
-          <div class="card bg-secondary text-white">
-            {% if f.movie.poster %}<img src="{{ f.movie.poster.url }}" class="card-img-top" style="height:140px;object-fit:cover;">{% endif %}
-            <div class="card-body"><a href="{% url 'movie_detail' f.movie.slug %}" class="text-white text-decoration-none">{{ f.movie.title }}</a></div>
+          <div class="card bg-secondary text-white h-100">
+            {% if f.movie.poster %}
+              <img src="{{ f.movie.poster.url }}" class="card-img-top" style="height:140px;object-fit:cover;">
+            {% endif %}
+            <div class="card-body">
+              <a href="{% url 'movie_detail' f.movie.slug %}" class="text-white text-decoration-none">{{ f.movie.title }}</a>
+            </div>
           </div>
         </div>
-        {% endfor %}
-      </div>
-
-      <h5>My Reviews</h5>
-      <ul class="list-group list-group-flush">
-        {% for r in reviews %}
-        <li class="list-group-item bg-black text-white">{{ r.movie.title }} - ★{{ r.rating }}<br>{{ r.content }}</li>
-        {% endfor %}
-      </ul>
+      {% endfor %}
     </div>
-  </div>
+  {% else %}
+    <p class="text-white">No favorites yet.</p>
+  {% endif %}
+
+  <h5>My Reviews ({{ reviews|length }})</h5>
+  {% if reviews %}
+    <ul class="list-group list-group-flush mb-4">
+      {% for r in reviews %}
+        <li class="list-group-item bg-black text-white">
+          <strong>{{ r.movie.title }}</strong> - 
+          {% for i in "★★★★★"|slice:":r.rating" %}★{% endfor %}
+          {% for i in "★★★★★"|slice:"r.rating:" %}☆{% endfor %}
+          <br>{{ r.content }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-white">You haven't reviewed any movies yet.</p>
+  {% endif %}
 </div>
+
 {% endblock %}
