@@ -70,7 +70,7 @@ def register(request):
             request.session['user_id'] = user.id
             messages.success(request, f"Welcome {user.first_name}! Account created successfully.")
             return redirect('home')
-    return render(request, 'register.html')
+    return render(request, 'auth.html')
 
 
 def login_view(request):
@@ -85,7 +85,7 @@ def login_view(request):
             return redirect('home')
         else:
             messages.error(request, "Invalid email or password.")
-    return render(request, 'login.html')
+    return render(request, 'auth.html')
 
 def logout_view(request):
     request.session.flush()
