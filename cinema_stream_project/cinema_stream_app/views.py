@@ -100,7 +100,11 @@ def logout_view(request):
 
 
 def profile(request):
-    user = request.user
+    user = models.get_logged_user(request)
+    if not user:
+        messages.error(request, "Please login first.")
+        return redirect('login')
+
     profile = user.profile
     favorites = models.Favorite.objects.filter(user=user).select_related('movie')
     reviews = models.Review.objects.filter(user=user).select_related('movie')
@@ -113,14 +117,22 @@ def profile(request):
     }
     return render(request, 'profile.html', context)
 
+
 def toggle_favorite(request, slug):
+    user = models.get_logged_user(request)
+    if not user:
+        messages.error(request, "Please login first.")
+        return redirect('login')
+
     movie = models.get_movie_by_slug(slug)
-    if models.is_favorite(request.user, movie):
-        models.remove_from_favorites(request.user, movie)
+
+    if models.is_favorite(user, movie):
+        models.remove_from_favorites(user, movie)
         messages.info(request, f"Removed {movie.title} from favorites.")
     else:
-        models.add_to_favorites(request.user, movie)
+        models.add_to_favorites(user, movie)
         messages.success(request, f"Added {movie.title} to favorites!")
+
     return redirect('movie_detail', slug=slug)
 
 def add_review(request, slug):
