@@ -1,0 +1,16 @@
+{% for movie in movies %}
+<div class="col">
+    <div class="card bg-black text-white h-100 movie-card">
+        <a href="{% url 'movie_detail' movie.slug %}">
+            <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
+        </a>
+        <div class="card-body text-center">
+            <h6 class="card-title">{{ movie.title }}</h6>
+            <p class="small">★★★★☆ {{ movie.overall_rating }} | {{ movie.release_year.year }}</p>
+            <button class="btn btn-sm btn-outline-light favorite-btn" data-slug="{{ movie.slug }}">
+                {% if movie in user_favorites %} Remove{% else %} Add{% endif %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endfor %}
