@@ -1,0 +1,47 @@
+{% extends 'index.html' %}
+{% block title %}Login / Register{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="text-center mb-5">Cinema Stream</h1>
+            <ul class="nav nav-tabs mb-4" id="authTab" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#login">Login</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#register">Register</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane active" id="login">
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <input type="email" name="	email" class="form-control mb-3" placeholder="Email" required>
+                        <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
+                        <button class="btn btn-danger w-100">Login</button>
+                    </form>
+                </div>
+
+                <div class="tab-pane" id="register">
+                    <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" name="first_name" class="form-control mb-3" placeholder="First Name" required>
+                                <input type="text" name="last_name" class="form-control mb-3" placeholder="Last Name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
+                                <input type="date" name="date_of_birth" class="form-control mb-3" required>
+                            </div>
+                        </div>
+                        <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
+                        <input type="password" name="confirm_pw" class="form-control mb-3" placeholder="Confirm Password" required>
+                        <label>Avatar</label>
+                        <input type="file" name="avatar" class="form-control mb-3" accept="image/*">
+                        <button class="btn btn-danger w-100">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
