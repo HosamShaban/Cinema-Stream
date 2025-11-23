@@ -5,7 +5,6 @@
 {% block content %}
 <div class="container py-5">
   <div class="row">
-    <!-- الفلاتر على الشمال -->
     <div class="col-lg-3 mb-5">
       <div class="bg-dark bg-opacity-80 p-4 rounded-4 shadow-lg sticky-top" style="top: 100px;">
         <h4 class="text-white mb-4 fw-bold">Filters</h4>
@@ -15,17 +14,17 @@
             <select name="genre" class="form-select bg-secondary text-white border-0">
               <option value="">All Genres</option>
               {% for g in genres %}
-                <option value="{{ g.slug }}" {% if request.GET.genre == g.slug %}selected{% endif %}>
-                  {{ g.name }}
-                </option>
+              <option value="{{ g.slug }}" {% if request.GET.genre|default:'' == g.slug %}selected{% endif %}>
+                {{ g.name }}
+              </option>
               {% endfor %}
             </select>
           </div>
 
           <div class="mb-3">
             <label class="text-white mb-2">Year</label>
-            <input name="year" class="form-control bg-secondary text-white border-0" 
-                   placeholder="e.g. 2024" value="{{ request.GET.year }}">
+            <input name="year" class="form-control bg-secondary text-white border-0" placeholder="e.g. 2024"
+              value="{{ request.GET.year }}">
           </div>
 
           <button type="submit" class="btn btn-danger w-100 py-3 fw-bold">Apply Filters</button>
@@ -33,51 +32,52 @@
       </div>
     </div>
 
-    <!-- الأفلام -->
     <div class="col-lg-9">
       <h2 class="text-white mb-5 fw-bold fs-1">
-        {% if request.GET.genre %}#{{ request.GET.genre|title }}{% else %}All Movies & Series{% endif %}
+        {% if request.GET.genre %}#{{ request.GET.genre|title }}{% else %}All Movies{% endif %}
       </h2>
 
-      <div id="results" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+      <div id="results" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
         {% for movie in movies %}
         <div class="col">
-          <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
-            <div class="movie-card-hover position-relative overflow-hidden rounded-3 shadow-lg">
-              <!-- الصورة من TMDB بجودة عالية جدًا -->
-              <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-                   class="img-fluid rounded-3"
-                   style="height: 380px; object-fit: cover; transition: all 0.4s;"
-                   alt="{{ movie.title }}">
+          <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+            <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}" 
+                 class="card-img-top" style="height: 380px; object-fit: cover; transition: transform 0.3s;"
+                 alt="{{ movie.title }}">
+            
+            <button class="position-absolute top-0 end-0 m-3 btn btn-outline-light btn-sm rounded-circle add-fav"
+                    data-slug="{{ movie.slug }}">
+              {% if movie in user_favorites %}♥{% else %}♡{% endif %}
+            </button>
 
-              <!-- معلومات الفيلم فوق الصورة -->
-              <div class="position-absolute bottom-0 start-0 end-0 p-3"
-                   style="background: linear-gradient(transparent, rgba(0,0,0,0.9));">
-                <h6 class="text-white fw-bold mb-1">{{ movie.title }}</h6>
-                <p class="text-white-70 small mb-2">
+            <div class="card-body d-flex flex-column">
+              <h6 class="card-title fw-bold text-white mb-2 text-truncate">{{ movie.title }}</h6>
+              
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="text-warning">
                   {% with ''|center:movie.overall_rating as range %}
-                    {% for i in range %}<span class="text-warning">★</span>{% endfor %}
+                  {% for i in range %}<i class="fa-solid fa-star"></i>{% endfor %}
                   {% endwith %}
-                  {{ movie.overall_rating }} • {{ movie.release_year.year }}
-                  {% if movie.duration %} • {{ movie.duration }} min{% endif %}
-                </p>
-                <div class="d-flex gap-2">
-                  {% for genre in movie.genres.all|slice:":2" %}
-                    <span class="badge bg-danger small">{{ genre.name }}</span>
-                  {% endfor %}
-                </div>
+                </span>
+                <span class="text-white fw-bold">{{ movie.overall_rating|floatformat:1 }}</span>
               </div>
 
-              <!-- زر المفضلة في الزاوية -->
-              <button class="position-absolute top-0 end-0 m-3 btn btn-outline-light btn-sm rounded-circle add-fav"
-                      data-slug="{{ movie.slug }}">
-                {% if movie in user_favorites %}♥{% else %}♡{% endif %}
-              </button>
+              <p class="text-white-50 small mb-2">
+                {{ movie.release_year.year }}
+                {% if movie.duration %} • {{ movie.duration }} min{% endif %}
+              </p>
+
+              <div class="mt-auto d-flex flex-wrap gap-1">
+                {% for genre in movie.genres.all|slice:":2" %}
+                <span class="badge bg-danger small">{{ genre.name }}</span>
+                {% endfor %}
+              </div>
             </div>
-          </a>
+          </div>
         </div>
         {% endfor %}
       </div>
+
       {% if movies.has_next %}
       <div class="text-center mt-5">
         <button id="loadMore" class="btn btn-outline-light btn-lg px-5 py-3">Load More</button>
@@ -90,63 +90,50 @@
 
 {% block extra_css %}
 <style>
-  .movie-card-hover:hover img {
-    transform: scale(1.08);
-  }
-  .movie-card-hover:hover {
-    transform: translateY(-8px);
+  .card:hover img {
+    transform: scale(1.05);
   }
   .add-fav {
-    width: 40px; height: 40px; backdrop-filter: blur(10px);
+    width: 40px;
+    height: 40px;
+    backdrop-filter: blur(10px);
   }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // تحديث الفلاتر تلقائيًا
-  $('#filters select, #filters input').on('change', function(){
+  $('#filters select, #filters input').on('change', function () {
     $('#filters').submit();
   });
 
-  // إضافة/إزالة مفضلة
-$(document).on('click', '.add-fav', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
+  $(document).on('click', '.add-fav', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
 
-  const btn = $(this);
-  const slug = btn.data('slug');
+    const btn = $(this);
+    const slug = btn.data('slug');
 
-  fetch("{% url 'api_toggle_favorite' %}", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': '{{ csrf_token }}',
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: JSON.stringify({ slug: slug })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      btn.html(data.is_favorite ? '♥' : '♡');
-      btn.toggleClass('btn-danger text-white', data.is_favorite);
-      btn.toggleClass('btn-outline-light', !data.is_favorite);
-    } else {
-      alert(data.error || 'Error!');
-    }
-  })
-  .catch(err => console.error(err));
-});
-  // Load More (إذا كنتِ بتستخدمي pagination)
-  $('#loadMore').on('click', function(){
-    const page = $(this).data('page') ? $(this).data('page') + 1 : 2;
-    $.get('', {page: page, ...Object.fromEntries(new URLSearchParams(window.location.search))})
-      .done(function(data){
-        $('#results').append($(data).find('#results').html());
-        if(!$(data).find('#loadMore').length) $('#loadMore').remove();
-        else $('#loadMore').data('page', page);
-      });
+    fetch("{% url 'api_toggle_favorite' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ slug: slug })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          btn.html(data.is_favorite ? '♥' : '♡');
+          btn.toggleClass('btn-danger text-white', data.is_favorite);
+          btn.toggleClass('btn-outline-light', !data.is_favorite);
+        } else {
+          alert(data.error || 'Error!');
+        }
+      })
+      .catch(err => console.error(err));
   });
 </script>
 {% endblock %}

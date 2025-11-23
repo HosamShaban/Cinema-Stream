@@ -5,16 +5,15 @@
 {% block content %}
 <div class="container py-5">
   <div class="row">
-    <!-- الجزء الشخصي -->
     <div class="col-lg-4 text-center mb-5">
       {% if profile.avatar %}
-        <img src="{{ profile.avatar.url }}" class="img-fluid rounded-circle mb-4 shadow-lg" 
-             style="width:180px; height:180px; object-fit:cover; border:4px solid #333;">
+      <img src="{{ profile.avatar.url }}" class="img-fluid rounded-circle mb-4 shadow-lg"
+        style="width:180px; height:180px; object-fit:cover; border:4px solid #333;">
       {% else %}
-        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mb-4 shadow-lg" 
-             style="width:180px; height:180px; font-size:60px; color:#555;">
-          ?
-        </div>
+      <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mb-4 shadow-lg"
+        style="width:180px; height:180px; font-size:60px; color:#555;">
+        ?
+      </div>
       {% endif %}
 
       <h3 class="text-white mb-1">{{ user.get_full_name|default:user.username }}</h3>
@@ -32,37 +31,49 @@
         </ul>
       </div>
     </div>
-
-    <!-- المفضلة والتقييمات -->
     <div class="col-lg-8">
-
-      <!-- Favorites -->
       <div class="mb-5">
         <h4 class="text-white mb-4">Favorites ({{ user_favorites|length }})</h4>
         {% if user_favorites %}
-          <div class="row g-4">
-            {% for movie in user_favorites %}
-              <div class="col-6 col-md-4 col-lg-3">
-                <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
-                  <div class="movie-card-hover position-relative overflow-hidden rounded-3 shadow">
-                    <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-                         class="img-fluid rounded-3" style="height: 350px; object-fit: cover;">
-                    <div class="position-absolute bottom-0 start-0 end-0 p-3 bg-gradient">
-                      <h6 class="text-white fw-bold mb-1">{{ movie.title }}</h6>
-                      <small class="text-white-70">
-                        {{ movie.release_year.year }} • {{ movie.duration }} min
-                      </small>
-                    </div>
-                  </div>
-                </a>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+          {% for movie in user_favorites %}
+          <div class="col">
+            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+
+              <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
+                <img
+                  src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+                  class="card-img-top rounded-4" style="height: 350px; object-fit: cover; transition: transform 0.3s;"
+                  alt="{{ movie.title }}">
+              </a>
+
+              <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm
+    {% if movie in user_favorites %}btn-danger text-white{% else %}btn-outline-light{% endif %}"
+                data-slug="{{ movie.slug }}" style="z-index: 10; width: 45px; height: 45px;">
+                {% if movie in user_favorites %}♥{% else %}♡{% endif %}
+              </button>
+
+              <div class="card-body d-flex flex-column">
+                <h6 class="card-title fw-bold text-white mb-2 text-truncate">{{ movie.title }}</h6>
+                <p class="text-white-50 small mb-2">
+                  {{ movie.release_year.year }} • {{ movie.duration }} min
+                </p>
+                <div class="d-flex flex-wrap gap-1 mt-auto">
+                  {% for genre in movie.genres.all|slice:":2" %}
+                  <span class="badge bg-danger small">{{ genre.name }}</span>
+                  {% endfor %}
+                </div>
               </div>
-            {% endfor %}
+            </div>
           </div>
+          {% endfor %}
+        </div>
+
         {% else %}
-          <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
-            <h5 class="text-muted">No favorites yet.</h5>
-            <p class="text-muted">Start adding movies you love!</p>
-          </div>
+        <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
+          <h5 class="text-muted">No favorites yet.</h5>
+          <p class="text-muted">Start adding movies you love!</p>
+        </div>
         {% endif %}
       </div>
 
@@ -70,34 +81,33 @@
       <div>
         <h4 class="text-white mb-4">My Reviews ({{ reviews|length }})</h4>
         {% if reviews %}
-          <div class="list-group list-group-flush">
-            {% for r in reviews %}
-              <div class="list-group-item bg-dark border-secondary text-white rounded-3 mb-3">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <h6 class="mb-1">
-                      <a href="{% url 'movie_detail' r.movie.slug %}" class="text-danger text-decoration-none">
-                        {{ r.movie.title }}
-                      </a>
-                    </h6>
-                    <p class="mb-2 text-warning">
-                      {% for i in "12345"|make_list %}
-                        {% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}
-                      {% endfor %}
-                      <span class="text-white-50 ms-2">{{ r.rating }}/5</span>
-                    </p>
-                    <p class="mb-0">{{ r.content }}</p>
-                  </div>
-                  <small class="text-muted">{{ r.created_at|date:"M j, Y" }}</small>
-                </div>
+        <div class="list-group list-group-flush">
+          {% for r in reviews %}
+          <div class="list-group-item bg-dark border-secondary text-white rounded-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="mb-1">
+                  <a href="{% url 'movie_detail' r.movie.slug %}" class="text-danger text-decoration-none">
+                    {{ r.movie.title }}
+                  </a>
+                </h6>
+                <p class="mb-2 text-warning">
+                  {% for i in "12345"|make_list %}
+                  {% if forloop.counter <= r.rating %}★{% else %}☆{% endif %} {% endfor %} <span
+                    class="text-white-50 ms-2">{{ r.rating }}/5</span>
+                </p>
+                <p class="mb-0">{{ r.content }}</p>
               </div>
-            {% endfor %}
+              <small class="text-muted">{{ r.created_at|date:"M j, Y" }}</small>
+            </div>
           </div>
+          {% endfor %}
+        </div>
         {% else %}
-          <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
-            <h5 class="text-muted">You haven't reviewed any movies yet.</h5>
-            <p class="text-muted">Be the first to share your thoughts!</p>
-          </div>
+        <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
+          <h5 class="text-muted">You haven't reviewed any movies yet.</h5>
+          <p class="text-muted">Be the first to share your thoughts!</p>
+        </div>
         {% endif %}
       </div>
 
@@ -108,8 +118,70 @@
 
 {% block extra_css %}
 <style>
-  .movie-card-hover:hover img { transform: scale(1.08); }
-  .movie-card-hover:hover { transform: translateY(-8px); }
-  .bg-gradient { background: linear-gradient(transparent, rgba(0,0,0,0.9)); }
+  .movie-card-hover:hover img {
+    transform: scale(1.08);
+  }
+
+  .movie-card-hover:hover {
+    transform: translateY(-8px);
+  }
+
+  .bg-gradient {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".add-fav").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            const slug = this.dataset.slug;
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            fetch("{% url 'api_toggle_favorite' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ slug: slug })
+            })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(data => {
+                if (data.is_favorite) {
+                    btn.innerHTML = "♥"; btn.classList.replace("btn-outline-light", "btn-danger");
+                } else {
+                    const card = btn.closest(".col");
+                    card.style.transition = "all 0.5s ease"; card.style.opacity = "0"; card.style.transform = "scale(0.8)";
+                    setTimeout(() => card.remove(), 500);
+
+                    const count = document.querySelector("h4.text-white");
+                    if (count) {
+                        let num = parseInt(count.textContent.match(/\d+/)[0]) - 1;
+                        count.innerHTML = `Favorites (${num})`;
+                        if (num === 0) location.reload();
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

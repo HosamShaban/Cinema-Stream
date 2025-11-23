@@ -1,17 +1,16 @@
-import json
-from urllib import request
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.shortcuts import render , redirect
+from django.shortcuts import get_object_or_404, render , redirect
 from django.core.paginator import Paginator
 from django.contrib import messages
 from . import models
+import json
 
 def home(request):
     trending = models.get_trending_movies() 
-    
+
     featured = models.get_all_movies().first()
 
     top_english = models.get_top_movies_by_language('English')
@@ -33,12 +32,15 @@ def home(request):
         user = models.get_logged_user(request)
         user_favorites = [fav.movie for fav in models.Favorite.objects.filter(user=user)]
 
+    recently_added = models.Movie.objects.order_by('created_at')[:12]
+
     context = {
+        'recently_added': recently_added,
         'featured': featured,
         'trending': trending,
         'top_english': top_english,
         'genres': genres,
-        'user_favorites': request.user.favorites.all() if request.user.is_authenticated else []
+        'user_favorites': user_favorites,
     }
     return render(request, 'home.html', context)
 
@@ -135,10 +137,14 @@ def login_view(request):
     return render(request, 'auth.html', {'active_tab': active_tab})
 
 def logout_view(request):
+    storage = messages.get_messages(request)
+    storage.used = True
     request.session.flush()
-    messages.success(request, "You have been logged out.")
+    request.session.clear_expired()
+    
+    messages.success(request, "You have been logged out successfully.")
+    
     return redirect('home')
-
 
 def profile(request):
     user = models.get_logged_user(request)
@@ -233,11 +239,44 @@ def add_review(request, slug):
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
 
+@csrf_exempt
+def api_post_review(request):
+    if request.method == 'POST':
+        try:
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment')
+            slug = request.POST.get('slug')
+
+            if not slug or not rating:
+                return JsonResponse({'success': False, 'error': 'Missing data'}, status=400)
+
+            movie = get_object_or_404(models.Movie, slug=slug)
+            user = request.user
+
+            review, created = models.Review.objects.update_or_create(
+                user=user, movie=movie,
+                defaults={'rating': int(rating), 'comment': comment}
+            )
+
+            models.update_movie_rating(movie)
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Review submitted successfully!',
+                'rating': review.rating,
+                'comment': review.comment,
+                'date': review.created_at.strftime("%b %d, %Y")
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=405)
+
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):
     def post(self, request):
         try:
-            # جلب الـ slug
             data = json.loads(request.body)
             slug = data.get('slug')
             if not slug:
@@ -245,7 +284,6 @@ class ToggleFavoriteView(View):
 
             movie = models.Movie.objects.get(slug=slug)
 
-            # جلب المستخدم من الـ session (لأنك بتستخدمي get_logged_user)
             user = models.get_logged_user(request)
             if not user:
                 return JsonResponse({
@@ -254,14 +292,11 @@ class ToggleFavoriteView(View):
                     'error': 'Please login first'
                 }, status=200)
 
-            # استخدام مودل Favorite المنفصل (اللي عندك فعلاً)
             fav, created = models.Favorite.objects.get_or_create(user=user, movie=movie)
             if not created:
-                # لو موجود → نشيله
                 fav.delete()
                 is_favorite = False
             else:
-                # لو جديد → خلاص ضفناه
                 is_favorite = True
 
             return JsonResponse({
@@ -273,3 +308,4 @@ class ToggleFavoriteView(View):
             return JsonResponse({'success': False, 'error': 'Movie not found'}, status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        
