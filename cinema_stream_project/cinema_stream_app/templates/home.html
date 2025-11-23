@@ -1,123 +1,149 @@
 {% extends 'index.html' %}
 {% load static %}
 {% block title %}Cinema Stream - Home{% endblock %}
-
 {% block content %}
-{% if featured %}
-<div class="position-relative text-white overflow-hidden" style="min-height: 90vh;">
-  <div class="position-absolute top-0 start-0 w-100 h-100" style="background: 
-                linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%),
-                url('{% if featured.backdrop_path %}
-                          {% static 'images/default-backdrop.jpg' %}
-                     {% else %}
-                          https://image.tmdb.org/t/p/original{{ featured.backdrop_path }}
-                     {% endif %}') 
-                center/cover no-repeat; 
-              z-index: 1; background-attachment: fixed;">
+
+<div class="container-fluid py-5 px-4">
+  <h2 class="text-white fw-bold fs-1 mb-5 text-shadow">Recently Added</h2>
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 justify-content-center">
+    {% for movie in recently_added %}
+    <div class="col">
+      <div class="card-movie h-100 bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift">
+        <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
+          <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+            class="card-img-top" style="height: 450px; object-fit: cover;" alt="{{ movie.title }}">
+        </a>
+
+        <div class="card-body p-3 d-flex flex-column">
+          <h6 class="text-white fw-bold mb-2 text-truncate">{{ movie.title }}</h6>
+
+          <div class="d-flex align-items-center gap-2 small text-warning mb-2">
+            {% with ''|center:movie.overall_rating as range %}
+            {% for i in range %}⭐{% endfor %}
+            {% endwith %}
+            <span class="text-white fw-bold">{{ movie.overall_rating|floatformat:1 }}</span>
+          </div>
+
+          <p class="text-white-60 small mb-2">
+            {{ movie.release_year.year }} • {{ movie.duration }} min
+          </p>
+
+          <div class="d-flex flex-wrap gap-1 mb-3">
+            {% for genre in movie.genres.all|slice:":2" %}
+            <span class="badge bg-danger small px-2 py-1">{{ genre.name }}</span>
+            {% endfor %}
+          </div>
+
+          <div class="mt-auto d-flex gap-2">
+            <a href="{% url 'movie_detail' movie.slug %}"
+              class="btn btn-danger btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
+              <i class="fa-solid fa-play"></i>
+              Play Trailer
+            </a>
+
+            <button class="btn btn-outline-light btn-sm px-3 add-fav" data-slug="{{ movie.slug }}">
+              {% if movie in user_favorites %}
+                <i class="fa-regular fa-heart heart-icon"></i>
+              {% else %}
+                <i class="fa-solid fa-heart heart-icon"></i>
+              {% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+      <p class="text-white-50 fs-3">No movies added recently.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="container-fluid py-5 px-4 bg-black bg-opacity-60" style="margin-top: -20px;">
+  <h2 class="text-white fw-bold fs-1 mb-5 text-shadow">Top English Movies</h2>
+
+  <div class="overflow-x-auto scrollbar-hide position-relative">
+    <div class="d-flex gap-4 pb-5" style="min-width: max-content;">
+      {% for movie in top_english %}
+      <div class="flex-shrink-0" style="width: 320px;">
+        <div class="card-movie bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift d-flex flex-column"
+          style="height: 680px; transition: all 0.4s ease;">
+
+          <a href="{% url 'movie_detail' movie.slug %}" class="d-block overflow-hidden rounded-top-4">
+            <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+              class="w-100" style="height: 440px; object-fit: cover; transition: transform 0.5s;"
+              alt="{{ movie.title }}" onmouseover="this.style.transform='scale(1.08)'"
+              onmouseout="this.style.transform='scale(1)'">
+          </a>
+
+          <div class="p-4 text-white d-flex flex-column flex-grow-1">
+            <h5 class="fw-bold mb-3 text-truncate">{{ movie.title }}</h5>
+
+            <div class="d-flex align-items-center small gap-2 mb-3" style="font-size: 0.9rem;">
+              <span>⭐</span>
+              <span class="fw-bold">{{ movie.overall_rating|floatformat:1 }}</span>
+              <span class="text-white-50">/ 10</span>
+            </div>
+
+            <p class="text-white-60 small mb-2">
+              {{ movie.release_year.year }} • {{ movie.duration }} min
+            </p>
+
+            <div class="d-flex flex-wrap gap-2 mb-4">
+              {% for genre in movie.genres.all|slice:":3" %}
+              <span class="badge bg-danger px-3 py-1 small rounded-pill">{{ genre.name }}</span>
+              {% endfor %}
+            </div>
+
+            <div class="mt-auto d-flex gap-3">
+
+              <a href="{% url 'movie_detail' movie.slug %}"
+                class="btn btn-danger btn-md flex-fill d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm">
+                <i class="fa-solid fa-play fa-lg"></i>
+                <span>Play Trailer</span>
+              </a>
+
+              <button class="btn btn-outline-light btn-md rounded-circle add-fav shadow-sm" data-slug="{{ movie.slug }}"
+                style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                {% if movie in user_favorites %}
+                <i class="fa-regular fa-heart heart-icon"></i>
+                {% else %}
+                <i class="fa-solid fa-heart heart-icon"></i>
+                {% endif %}
+              </button>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="text-white-50 fs-4 ps-4">No English movies available yet.</div>
+      {% endfor %}
+    </div>
   </div>
 
-  
-{% endif %}
-
-<div class="container pb-5" style="margin-top: -150px; position: relative; z-index: 10;">
-  <section class="bg-dark bg-opacity-80 rounded-4 p-4 shadow-lg">
-    <h2 class="mb-4 text-white fw-bold fs-1 text-shadow">Trending Now</h2>
-
-    <div class="overflow-x-auto scrollbar-hide position-relative">
-      <div class="d-flex gap-4" style="width: max-content;">
-        {% for movie in trending %}
-        <div class="movie-card-hover">
-          <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none text-white">
-            <div class="position-relative overflow-hidden rounded-3 shadow-lg">
-              <img
-                src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-                class="img-fluid rounded-3" style="width: 270px; height: 390px; object-fit: cover;"
-                alt="{{ movie.title }}">
-
-              <div class="position-absolute top-0 start-0 m-3">
-                <span class="display-3 fw-bold text-white opacity-80" style="text-shadow: 4px 4px 12px black;">
-                  {{ forloop.counter }}
-                </span>
-              </div>
-
-              <div class="position-absolute bottom-0 start-0 end-0 bg-gradient p-3">
-                <h6 class="mb-0 fw-bold">{{ movie.title }}</h6>
-                <small class="text-white-70">{{ movie.release_year.year }} • {{ movie.duration }} min</small>
-              </div>
-            </div>
-          </a>
-        </div>
+  <div class="container py-5">
+    <section>
+      <h2 class="text-white fw-bold fs-2 mb-4">Browse by Genre</h2>
+      <div class="d-flex flex-wrap gap-3">
+        {% for genre in genres %}
+        <a href="{% url 'browse' %}?genre={{ genre.slug }}"
+          class="btn btn-outline-danger px-5 py-3 rounded-pill fs-5 hover-fill">
+          {{ genre.name }}
+        </a>
         {% endfor %}
       </div>
+    </section>
+  </div>
 
-      <div class="position-absolute top-50 end-0 translate-middle-y me-4">
-        <div class="bg-white bg-opacity-25 rounded-circle p-3 shadow">
-          <i class="bi bi-chevron-right text-white fs-1"></i>
-        </div>
-      </div>
-    </div>
-  </section>
 </div>
 
-<div class="container py-5">
-  <section class="mb-5">
-    <h2 class="mb-4 text-white">Top English Movies</h2>
-    <div class="row row-cols-2 row-cols-md-4 g-4">
-      {% for movie in top_english %}
-      <div class="col">
-        <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none text-white">
-          <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-            class="img-fluid rounded shadow-lg hover-scale" style="height: 400px; object-fit: cover;"
-            alt="{{ movie.title }}">
-          <p class="text-center mt-2 small fw-bold">{{ movie.title }}</p>
-        </a>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section>
-    <h2 class="mb-4 text-white">Genres</h2>
-    <div class="d-flex flex-wrap gap-3">
-      {% for genre in genres %}
-      <a href="{% url 'browse' %}?genre={{ genre.slug }}"
-        class="btn btn-outline-secondary px-4 py-2 rounded-pill hover-danger">
-        {{ genre.name }}
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-</div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-  .hero {
-    min-height: 90vh;
-  }
-
-  .movie-card-hover {
-    transition: all 0.3s;
-  }
-
-  .movie-card-hover:hover {
-    transform: translateY(-10px);
-  }
-
-  .hover-scale {
-    transition: transform 0.3s;
-  }
-
-  .hover-scale:hover {
-    transform: scale(1.05);
-  }
-
-  .hover-danger:hover {
-    background: #dc3545 !important;
-    border-color: #dc3545 !important;
-    color: white !important;
-  }
-
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -127,69 +153,116 @@
     display: none;
   }
 
-  .bg-gradient {
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-  }
-
-  .movie-card-hover {
+  .hover-lift {
     transition: all 0.4s ease;
   }
 
-  .movie-card-hover:hover {
-    transform: translateY(-12px) scale(1.04);
+  .hover-lift:hover {
+    transform: translateY(-15px);
+    box-shadow: 0 20px 40px rgba(220, 53, 69, 0.5) !important;
   }
 
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .card-movie {
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .btn-danger {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    border: none;
+    font-weight: 600;
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4);
+  }
+
+  .btn-outline-light:hover {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+  }
+
+  .hover-scale {
+    transition: transform 0.3s ease;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.15);
+  }
+
+  .text-shadow {
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+  }
+
+  .add-fav {
+    transition: all 0.2s ease;
+  }
+
+  .heart-icon {
+    font-size: 20px;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .add-fav .fa-solid {
+    color: #dc3545 !important;
+  }
+
+  .add-fav:hover {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+  }
+
+  .add-fav:hover .heart-icon {
+    color: #dc3545 !important;
+    transform: scale(1.2);
   }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-$(document).on('click', '.add-fav, .favorite-btn', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
+  $(document).on('click', '.add-fav', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
 
-  const btn = $(this);
-  const slug = btn.data('slug');
-  const isBigButton = btn.hasClass('favorite-btn');
+    const btn = $(this);
+    const slug = btn.data('slug');
+    const icon = btn.find("i");
 
-  fetch("{% url 'api_toggle_favorite' %}", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': '{{ csrf_token }}',
-    },
-    body: JSON.stringify({ slug: slug })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      if (isBigButton) {
-        btn.text(data.is_favorite ? 'Remove from Favorites' : '+ Add to Favorites');
-        btn.toggleClass('btn-danger', data.is_favorite);
-        btn.toggleClass('btn-outline-light', !data.is_favorite);
-      } else {
-        btn.html(data.is_favorite ? 'Heart' : 'Heart');
-        btn.toggleClass('btn-danger text-white', data.is_favorite);
-        btn.toggleClass('btn-outline-light', !data.is_favorite);
-      }
-    } 
-    else if (data.login_required) {
-      // لو مش مسجل دخول → يحولك للـ login ويرجعك تاني
-      window.location.href = "{% url 'login' %}?next=" + window.location.pathname;
-    }
-    else {
-      alert(data.error || 'Error!');
-    }
-  })
-  .catch(err => console.error(err));
-});
+    fetch("{% url 'api_toggle_favorite' %}", {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}",
+      },
+      body: JSON.stringify({ slug: slug })
+    })
+      .then(response => response.json())
+      .then(data => {
+
+        if (data.success) {
+
+          if (data.is_favorite) {
+            // عند الإضافة (يصبح ممتلئاً)
+            icon.removeClass("fa-regular text-white")
+              .addClass("fa-solid text-danger");
+          } else {
+            // عند الإزالة (يصبح فارغاً)
+            icon.removeClass("fa-solid text-danger")
+              .addClass("fa-regular text-white");
+          }
+
+        } else if (data.login_required) {
+          window.location.href = "{% url 'login' %}?next=" + window.location.pathname;
+        }
+        else {
+          alert(data.error || "Error!");
+        }
+
+      })
+      .catch(err => console.error(err));
+  });
 </script>
+
 {% endblock %}

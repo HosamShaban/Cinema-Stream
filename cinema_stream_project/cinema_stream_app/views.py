@@ -1,5 +1,5 @@
-import json
-from urllib import request
+from datetime import timedelta
+from django.utils import timezone
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -11,7 +11,7 @@ from . import models
 
 def home(request):
     trending = models.get_trending_movies() 
-    
+
     featured = models.get_all_movies().first()
 
     top_english = models.get_top_movies_by_language('English')
@@ -33,12 +33,15 @@ def home(request):
         user = models.get_logged_user(request)
         user_favorites = [fav.movie for fav in models.Favorite.objects.filter(user=user)]
 
+    recently_added = models.Movie.objects.order_by('created_at')[:12]
+
     context = {
+        'recently_added': recently_added,
         'featured': featured,
         'trending': trending,
         'top_english': top_english,
         'genres': genres,
-        'user_favorites': request.user.favorites.all() if request.user.is_authenticated else []
+        'user_favorites': user_favorites,
     }
     return render(request, 'home.html', context)
 
