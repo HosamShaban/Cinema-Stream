@@ -5,7 +5,6 @@
 {% block content %}
 <div class="container py-5">
   <div class="row">
-    <!-- الجزء الشخصي -->
     <div class="col-lg-4 text-center mb-5">
       {% if profile.avatar %}
       <img src="{{ profile.avatar.url }}" class="img-fluid rounded-circle mb-4 shadow-lg"
@@ -32,11 +31,7 @@
         </ul>
       </div>
     </div>
-
-    <!-- المفضلة والتقييمات -->
     <div class="col-lg-8">
-
-      <!-- Favorites -->
       <div class="mb-5">
         <h4 class="text-white mb-4">Favorites ({{ user_favorites|length }})</h4>
         {% if user_favorites %}

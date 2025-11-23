@@ -222,17 +222,13 @@
 
 {% block scripts %}
 <script>
-// هيشتغل حتى لو مفيش jQuery ولا أي مكتبة خارجية
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".add-fav").forEach(function (button) {
         button.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
-
             const slug = this.getAttribute("data-slug");
             const icon = this.querySelector("i");
-
-            // جيب الـ csrf token من الكوكيز مباشرة (أضمن طريقة في العالم)
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -276,12 +272,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else if (data.login_required) {
                     window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.href);
                 } else {
-                    alert(data.error || "حدث خطأ!");
+                    alert(data.error || "error");
                 }
             })
             .catch(error => {
                 console.error("Error:", error);
-                alert("فشل الاتصال، تأكد من الإنترنت أو حاول لاحقًا");
+                alert("error");
             });
         });
     });
