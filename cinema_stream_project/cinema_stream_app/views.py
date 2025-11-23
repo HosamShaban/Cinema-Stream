@@ -8,6 +8,7 @@ from django.shortcuts import render , redirect
 from django.core.paginator import Paginator
 from django.contrib import messages
 from . import models
+import json
 
 def home(request):
     trending = models.get_trending_movies() 

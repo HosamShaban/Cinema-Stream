@@ -222,47 +222,69 @@
 
 {% block scripts %}
 <script>
-  $(document).on('click', '.add-fav', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
+// هيشتغل حتى لو مفيش jQuery ولا أي مكتبة خارجية
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".add-fav").forEach(function (button) {
+        button.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
 
-    const btn = $(this);
-    const slug = btn.data('slug');
-    const icon = btn.find("i");
+            const slug = this.getAttribute("data-slug");
+            const icon = this.querySelector("i");
 
-    fetch("{% url 'api_toggle_favorite' %}", {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": "{{ csrf_token }}",
-      },
-      body: JSON.stringify({ slug: slug })
-    })
-      .then(response => response.json())
-      .then(data => {
+            // جيب الـ csrf token من الكوكيز مباشرة (أضمن طريقة في العالم)
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
 
-        if (data.success) {
-
-          if (data.is_favorite) {
-            // عند الإضافة (يصبح ممتلئاً)
-            icon.removeClass("fa-regular text-white")
-              .addClass("fa-solid text-danger");
-          } else {
-            // عند الإزالة (يصبح فارغاً)
-            icon.removeClass("fa-solid text-danger")
-              .addClass("fa-regular text-white");
-          }
-
-        } else if (data.login_required) {
-          window.location.href = "{% url 'login' %}?next=" + window.location.pathname;
-        }
-        else {
-          alert(data.error || "Error!");
-        }
-
-      })
-      .catch(err => console.error(err));
-  });
+            fetch("{% url 'api_toggle_favorite' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ slug: slug })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    if (data.is_favorite) {
+                        icon.classList.remove("fa-regular");
+                        icon.classList.add("fa-solid");
+                        icon.style.color = "#dc3545";
+                    } else {
+                        icon.classList.remove("fa-solid");
+                        icon.classList.add("fa-regular");
+                        icon.style.color = "";
+                    }
+                } else if (data.login_required) {
+                    window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.href);
+                } else {
+                    alert(data.error || "حدث خطأ!");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("فشل الاتصال، تأكد من الإنترنت أو حاول لاحقًا");
+            });
+        });
+    });
+});
 </script>
-
 {% endblock %}
