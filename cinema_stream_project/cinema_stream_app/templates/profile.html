@@ -45,7 +45,6 @@
           <div class="col">
             <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden">
 
-              <!-- صورة الفيلم -->
               <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
                 <img
                   src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
@@ -53,7 +52,6 @@
                   alt="{{ movie.title }}">
               </a>
 
-              <!-- زر المفضلة -->
               <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm
     {% if movie in user_favorites %}btn-danger text-white{% else %}btn-outline-light{% endif %}"
                 data-slug="{{ movie.slug }}" style="z-index: 10; width: 45px; height: 45px;">
