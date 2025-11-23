@@ -14,4 +14,5 @@ urlpatterns = [
     path('movie/<slug:slug>/review/', views.add_review, name='add_review'),
     path('about/', views.about, name='about'),
     path('api/favorite/toggle/', views.ToggleFavoriteView.as_view(), name='api_toggle_favorite'),
+    path('api/review/', views.api_post_review, name='api_post_review'),
 ]

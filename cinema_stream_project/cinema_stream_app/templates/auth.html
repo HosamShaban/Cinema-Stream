@@ -1,101 +1,191 @@
 {% extends 'index.html' %}
 {% load static %}
 
-{% block title %}Login / Register{% endblock %}
+{% block title %}Login & Register{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-7 bg-dark text-white p-4 rounded shadow">
-            <ul class="nav nav-tabs mb-4" id="authTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'login' %}active{% endif %}" data-bs-toggle="tab"
-                        href="#login">
-                        Login
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'register' %}active{% endif %}" data-bs-toggle="tab"
-                        href="#register">
-                        Sign Up
-                    </a>
-                </li>
-            </ul>
 
-            <div class="tab-content">
+<div id="cinema-bg" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat fixed;
+    filter: blur(8px) brightness(0.4);
+    z-index: -1;
+    transform: scale(1.1);
+"></div>
 
-                <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" id="login">
+<div class="container py-5 position-relative"
+    style="z-index: 10; min-height: 80vh; display: flex; align-items: center;">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-5 col-lg-6">
+            <div class="bg-dark bg-opacity-95 text-white p-5 rounded-4 shadow-lg border border-danger border-3">
 
-                    {% if messages %}
-                    {% for msg in messages %}
-                    {% if "login" in msg.extra_tags %}
-                    {% if "error" in msg.tags %}
-                    <div class="alert alert-danger p-2">{{ msg }}</div>
-                    {% elif "success" in msg.tags %}
-                    <div class="alert alert-success p-2">{{ msg }}</div>
-                    {% else %}
-                    <div class="alert alert-info p-2">{{ msg }}</div>
-                    {% endif %}
-                    {% endif %}
-                    {% endfor %}
-                    {% endif %}
-
-                    <form method="post" action="{% url 'login' %}">
-                        {% csrf_token %}
-                        <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
-                        <input type="password" name="password" class="form-control mb-3" placeholder="Password"
-                            required>
-
-                        <button class="btn btn-danger w-100">Login</button>
-                    </form>
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold text-danger mb-3"
+                        style="text-shadow: 0 0 20px rgba(220, 53, 69, 0.8);">
+                        Cinema Stream
+                    </h1>
+                    <p class="lead text-white-50">Watch movies like never before</p>
                 </div>
 
-                <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" id="register">
+                <ul class="nav nav-pills nav-fill mb-5 gap-3" id="authTabs" role="tablist">
+                    <li class="nav-item flex-fill">
+                        <a class="nav-link text-center fs-5 py-3 rounded-pill fw-bold transition-all
+           {% if active_tab == 'login' %}
+               active bg-danger text-white shadow-lg border border-white
+           {% else %}
+               bg-dark bg-opacity-70 text-white-75 border border-danger border-2
+           {% endif %}" data-bs-toggle="tab" href="#login">
+                            Login
+                        </a>
+                    </li>
+                    <li class="nav-item flex-fill">
+                        <a class="nav-link text-center fs-5 py-3 rounded-pill fw-bold transition-all
+           {% if active_tab == 'register' %}
+               active bg-danger text-white shadow-lg border border-white
+           {% else %}
+               bg-dark bg-opacity-70 text-white-75 border border-danger border-2
+           {% endif %}" data-bs-toggle="tab" href="#register">
+                            Sign Up
+                        </a>
+                    </li>
+                </ul>
 
-                    {% if messages %}
-                    {% for msg in messages %}
-                    {% if "register" in msg.extra_tags %}
-                    {% if "error" in msg.tags %}
-                    <div class="alert alert-danger p-2">{{ msg }}</div>
-                    {% elif "success" in msg.tags %}
-                    <div class="alert alert-success p-2">{{ msg }}</div>
-                    {% else %}
-                    <div class="alert alert-info p-2">{{ msg }}</div>
-                    {% endif %} {% endif %}
-                    {% endfor %}
-                    {% endif %}
+                <div class="tab-content">
 
-                    <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <input type="text" name="first_name" class="form-control mb-3" placeholder="First Name"
-                                    required>
-                                <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <input type="text" name="last_name" class="form-control mb-3" placeholder="Last Name"
-                                    required>
-                                <input type="date" name="date_of_birth" class="form-control mb-3" required>
-                            </div>
+                    <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" id="login">
+                        {% if messages %}
+                        {% for msg in messages %}
+                        {% if "login" in msg.extra_tags %}
+                        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show rounded-4">
+                            {{ msg }}
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                         </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
 
-                        <input type="password" name="password" class="form-control mb-3" placeholder="Password"
-                            required>
-                        <input type="password" name="confirm_pw" class="form-control mb-3"
-                            placeholder="Confirm Password" required>
+                        <form method="post" action="{% url 'login' %}">
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                <input type="email" name="email" class="form-control form-control-lg custom-input"
+                                    placeholder="Email Address" required>
+                            </div>
+                            <div class="mb-4">
+                                <input type="password" name="password" class="form-control form-control-lg custom-input"
+                                    placeholder="Password" required>
+                            </div>
+                            <button class="btn btn-danger btn-lg w-100 fw-bold shadow-lg rounded-pill hover-effect">
+                                Login Now
+                            </button>
+                        </form>
+                    </div>
 
-                        <label class="mb-1">Avatar</label>
-                        <input type="file" name="avatar" class="form-control mb-3" accept="image/*">
+                    <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" id="register">
+                        {% if messages %}
+                        {% for msg in messages %}
+                        {% if "register" in msg.extra_tags %}
+                        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show rounded-4">
+                            {{ msg }}
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
 
-                        <button class="btn btn-success w-100">Sign Up</button>
-                    </form>
+                        <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <input type="text" name="first_name" class="form-control custom-input"
+                                        placeholder="First Name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="last_name" class="form-control custom-input"
+                                        placeholder="Last Name" required>
+                                </div>
+                                <div class="col-12">
+                                    <input type="email" name="email" class="form-control custom-input"
+                                        placeholder="Email Address" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="date" name="date_of_birth" class="form-control custom-input" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="file" name="avatar" class="form-control custom-input" accept="image/*">
+                                </div>
+                                <div class="col-12">
+                                    <input type="password" name="password" class="form-control custom-input"
+                                        placeholder="Password" required>
+                                </div>
+                                <div class="col-12">
+                                    <input type="password" name="confirm_pw" class="form-control custom-input"
+                                        placeholder="Confirm Password" required>
+                                </div>
+                            </div>
+                            <button
+                                class="btn btn-success btn-lg w-100 mt-4 fw-bold shadow-lg rounded-pill hover-effect">
+                                Create Account
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-5 text-white-50 small">
+                    <p class="mb-0">© 2025 Cinema Stream</p>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_css %}
+<style>
+    /* إلغاء اللون الأزرق الافتراضي من Bootstrap نهائيًا */
+    #authTabs .nav-link {
+        color: #ff9999 !important; /* وردي فاتح حلو */
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        backdrop-filter: blur(10px);
+    }
+
+    /* لما يكون active → أبيض + أحمر */
+    #authTabs .nav-link.active {
+        color: white !important;
+        background: linear-gradient(135deg, #dc3545, #c82333) !important;
+        border: 3px solid white !important;
+        transform: translateY(-8px) scale(1.08) !important;
+        box-shadow: 0 20px 40px rgba(220, 53, 69, 0.7) !important;
+    }
+
+    /* لما يكون غير active → وردي فاتح + خلفية شفافة + hover يبيض */
+    #authTabs .nav-link:not(.active) {
+        background: rgba(30, 30, 30, 0.6) !important;
+        border: 2px solid #dc3545 !important;
+    }
+
+    #authTabs .nav-link:not(.active):hover {
+        color: white !important;
+        background: rgba(220, 53, 69, 0.5) !important;
+        border-color: white !important;
+        transform: translateY(-5px);
+    }
+
+    /* باقي الستايلات */
+    .custom-input::placeholder { color: #ff6666 !important; font-weight: 500; }
+    .custom-input {
+        background: #111 !important;
+        border: 2px solid #444 !important;
+        color: white !important;
+    }
+    .custom-input:focus {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.3rem rgba(220,53,69,0.4) !important;
+        background: #222 !important;
+    }
+    .hover-effect:hover {
+        transform: translateY(-8px) scale(1.05) !important;
+        box-shadow: 0 25px 50px rgba(220,53,69,0.7) !important;
+    }
+</style>
 {% endblock %}

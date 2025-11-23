@@ -38,15 +38,15 @@
           <div class="mt-auto d-flex gap-2">
             <a href="{% url 'movie_detail' movie.slug %}"
               class="btn btn-danger btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
-              <i class="fa-solid fa-play"></i>
-              Play Trailer
+              <i class="fa-solid fa-circle-info"></i>
+              View Details
             </a>
 
             <button class="btn btn-outline-light btn-sm px-3 add-fav" data-slug="{{ movie.slug }}">
               {% if movie in user_favorites %}
-                <i class="fa-regular fa-heart heart-icon"></i>
+              <i class="fa-regular fa-heart heart-icon"></i>
               {% else %}
-                <i class="fa-solid fa-heart heart-icon"></i>
+              <i class="fa-solid fa-heart heart-icon"></i>
               {% endif %}
             </button>
           </div>
@@ -101,8 +101,8 @@
 
               <a href="{% url 'movie_detail' movie.slug %}"
                 class="btn btn-danger btn-md flex-fill d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm">
-                <i class="fa-solid fa-play fa-lg"></i>
-                <span>Play Trailer</span>
+                <i class="fa-solid fa-film"></i>
+                <span>Watch Now</span>
               </a>
 
               <button class="btn btn-outline-light btn-md rounded-circle add-fav shadow-sm" data-slug="{{ movie.slug }}"
@@ -222,65 +222,65 @@
 
 {% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".add-fav").forEach(function (button) {
-        button.addEventListener("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const slug = this.getAttribute("data-slug");
-            const icon = this.querySelector("i");
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const slug = this.getAttribute("data-slug");
+        const icon = this.querySelector("i");
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
             }
+          }
+          return cookieValue;
+        }
 
-            fetch("{% url 'api_toggle_favorite' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({ slug: slug })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    if (data.is_favorite) {
-                        icon.classList.remove("fa-regular");
-                        icon.classList.add("fa-solid");
-                        icon.style.color = "#dc3545";
-                    } else {
-                        icon.classList.remove("fa-solid");
-                        icon.classList.add("fa-regular");
-                        icon.style.color = "";
-                    }
-                } else if (data.login_required) {
-                    window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.href);
-                } else {
-                    alert(data.error || "error");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("error");
-            });
-        });
+        fetch("{% url 'api_toggle_favorite' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+          },
+          body: JSON.stringify({ slug: slug })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              if (data.is_favorite) {
+                icon.classList.remove("fa-regular");
+                icon.classList.add("fa-solid");
+                icon.style.color = "#dc3545";
+              } else {
+                icon.classList.remove("fa-solid");
+                icon.classList.add("fa-regular");
+                icon.style.color = "";
+              }
+            } else if (data.login_required) {
+              window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.href);
+            } else {
+              alert(data.error || "error");
+            }
+          })
+          .catch(error => {
+            console.error("Error:", error);
+            alert("error");
+          });
+      });
     });
-});
+  });
 </script>
 {% endblock %}
