@@ -17,11 +17,14 @@ class Movie(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=210, unique=True)
     description = models.TextField()
+    tmdb_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
     poster = models.ImageField(upload_to='posters/', blank=True, null=True)
     backdrop = models.ImageField(upload_to='backdrops/', blank=True, null=True)
     trailer_url = models.URLField(blank=True, null=True)
     video_url = models.URLField(blank=True, null=True)
     release_year = models.DateField()
+    poster_path   = models.CharField(max_length=200, blank=True, null=True)
+    backdrop_path = models.CharField(max_length=200, blank=True, null=True)
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
     language = models.CharField(max_length=50, default='English')
     is_premium = models.BooleanField(default=False)
@@ -138,6 +141,9 @@ def get_all_movies():
 
 def get_trending_movies():
     return Movie.objects.all().order_by('-rating_count')[:10]
+
+def get_top_movies_by_language(language, limit=8):
+    return Movie.objects.filter(language=language).order_by('-overall_rating')[:limit]
 
 def get_movie_by_slug(slug):
     return Movie.objects.get(slug=slug)

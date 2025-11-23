@@ -1,16 +1,44 @@
+import json
+from urllib import request
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render , redirect
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.shortcuts import render , redirect
+from django.core.paginator import Paginator
 from django.contrib import messages
 from . import models
 
 def home(request):
-    trending = models.get_trending_movies()
-    latest = models.get_all_movies()[:12]
+    trending = models.get_trending_movies() 
+    
+    featured = models.get_all_movies().first()
+
+    top_english = models.get_top_movies_by_language('English')
+    
+    genres = models.Genre.objects.all()
+
+    featured = models.Movie.objects.filter(title__icontains="Interstellar").first()
+    if not featured:
+        featured = models.Movie.objects.filter(title__icontains="Inception").first()
+    if not featured:
+        featured = models.Movie.objects.filter(is_premium=True).order_by('-overall_rating').first()
+
+    trending = models.Movie.objects.order_by('-overall_rating')[:20]
+    top_english = models.Movie.objects.filter(language__icontains='English').order_by('-overall_rating')[:8]
+    genres = models.Genre.objects.all()
+
+    user_favorites = []
+    if 'user_id' in request.session:
+        user = models.get_logged_user(request)
+        user_favorites = [fav.movie for fav in models.Favorite.objects.filter(user=user)]
 
     context = {
-        'trending_movies': trending,
-        'latest_movies': latest,
-        'page_title': 'Cinema Stream'
+        'featured': featured,
+        'trending': trending,
+        'top_english': top_english,
+        'genres': genres,
+        'user_favorites': request.user.favorites.all() if request.user.is_authenticated else []
     }
     return render(request, 'home.html', context)
 
@@ -22,19 +50,32 @@ def browse(request):
     year = request.GET.get('year')
     ctype = request.GET.get('type')
 
+    movies = models.Movie.objects.all().order_by('-overall_rating')
+
+    if request.GET.get('genre'):
+        movies = movies.filter(genres__slug=request.GET['genre'])
+    if request.GET.get('year'):
+        movies = movies.filter(release_year__year=request.GET['year'])
+    if request.GET.get('type'):
+        movies = movies.filter(content_type=request.GET['type'])
+
     if query:
         movies = models.search_movies(query)
     else:
         movies = models.filter_movies(genre=genre, year=year, content_type=ctype)
 
+    paginator = Paginator(movies, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'movies': movies,
-        'genres': genres,
+        'movies': page_obj,
+        'genres': models.Genre.objects.all(),
         'current_genre': genre,
         'current_year': year,
         'current_type': ctype,
         'query': query,
-        'page_title': 'Browse Movies & Series'
+        'page_title': 'Browse Movies'
     }
     return render(request, 'browse.html', context)
 
@@ -106,16 +147,21 @@ def profile(request):
         return redirect('login')
 
     profile = user.profile
-    favorites = models.Favorite.objects.filter(user=user).select_related('movie')
+    user_favorites = models.Favorite.objects.filter(user=user).select_related('movie')
     reviews = models.Review.objects.filter(user=user).select_related('movie')
 
     context = {
         'profile': profile,
-        'favorites': favorites,
+        'user_favorites': user_favorites,
         'reviews': reviews,
         'page_title': 'My Profile'
     }
-    return render(request, 'profile.html', context)
+
+    ser = models.get_logged_user(request)
+    user_favorites = [f.movie for f in models.Favorite.objects.filter(user=user)] if user else []
+    return render(request, 'profile.html', {
+        'user_favorites': user_favorites
+    })
 
 def edit_profile(request):
     user = models.get_logged_user(request)
@@ -187,41 +233,43 @@ def add_review(request, slug):
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
 
-def api_toggle_favorite(request):
-    if request.method != "POST":
-        return JsonResponse({
-            'success': False,
-            'message': 'Method not allowed. Use POST.'
-        }, status=405)
+@method_decorator(csrf_exempt, name='dispatch')
+class ToggleFavoriteView(View):
+    def post(self, request):
+        try:
+            # جلب الـ slug
+            data = json.loads(request.body)
+            slug = data.get('slug')
+            if not slug:
+                return JsonResponse({'success': False, 'error': 'Slug required'}, status=400)
 
-    user = models.get_logged_user(request)
-    if not user:
-        return JsonResponse({
-            'success': False,
-            'message': 'Please login to continue.'
-        }, status=401)
+            movie = models.Movie.objects.get(slug=slug)
 
-    slug = request.POST.get('slug')
-    if not slug:
-        return JsonResponse({
-            'success': False,
-            'message': 'Movie slug is required.'
-        }, status=400)
+            # جلب المستخدم من الـ session (لأنك بتستخدمي get_logged_user)
+            user = models.get_logged_user(request)
+            if not user:
+                return JsonResponse({
+                    'success': False,
+                    'login_required': True,
+                    'error': 'Please login first'
+                }, status=200)
 
-    movie = get_object_or_404(models.Movie, slug=slug)
-    favorite, created = models.Favorite.objects.get_or_create(user=user, movie=movie)
-    
-    if not created:
-        favorite.delete()
-        action = "removed"
-        is_favorite = False
-    else:
-        action = "added"
-        is_favorite = True
-    return JsonResponse({
-        'success': True,
-        'is_favorite': is_favorite,
-        'action': action,
-        'total_favorites': movie.favorite_set.count(),
-        'message': f"Movie {action} to favorites successfully!"
-    })
+            # استخدام مودل Favorite المنفصل (اللي عندك فعلاً)
+            fav, created = models.Favorite.objects.get_or_create(user=user, movie=movie)
+            if not created:
+                # لو موجود → نشيله
+                fav.delete()
+                is_favorite = False
+            else:
+                # لو جديد → خلاص ضفناه
+                is_favorite = True
+
+            return JsonResponse({
+                'success': True,
+                'is_favorite': is_favorite
+            })
+
+        except models.Movie.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Movie not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)

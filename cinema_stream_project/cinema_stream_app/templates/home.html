@@ -4,53 +4,192 @@
 
 {% block content %}
 {% if featured %}
-<div class="hero text-center" style="background:linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)), url('{{ featured.backdrop.url }}') center/cover; padding:80px 0;">
-  <div class="container">
-    <h1 class="display-4">{{ featured.title }}</h1>
-    <p class="lead">★★★★☆ {{ featured.overall_rating }} | {{ featured.release_year.year }} | {{ featured.duration }} min</p>
-    <a href="{% url 'movie_detail' featured.slug %}" class="btn btn-danger btn-lg">Play Trailer</a>
-    <button class="btn btn-outline-light btn-lg ms-3 favorite-btn" data-slug="{{ featured.slug }}">
-      {% if featured in user_favorites %}Remove from Favorites{% else %}Add to Favorites{% endif %}
-    </button>
+<div class="position-relative text-white overflow-hidden" style="min-height: 90vh;">
+  <div class="position-absolute top-0 start-0 w-100 h-100" style="background: 
+                linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%),
+                url('{% if featured.backdrop_path %}
+                          {% static 'images/default-backdrop.jpg' %}
+                     {% else %}
+                          https://image.tmdb.org/t/p/original{{ featured.backdrop_path }}
+                     {% endif %}') 
+                center/cover no-repeat; 
+              z-index: 1; background-attachment: fixed;">
   </div>
-</div>
+
+  
 {% endif %}
 
-<div class="container py-5">
-  <h3>Trending Now</h3>
-  <div class="row row-cols-2 row-cols-md-5 g-4">
-    {% for movie in trending %}
-    <div class="col">
-      <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none text-white">
-        {% if movie.poster %}<img src="{{ movie.poster.url }}" class="img-fluid rounded movie-card" alt="{{ movie.title }}">{% endif %}
-        <p class="text-center mt-2 small">{{ movie.title }}</p>
-      </a>
-    </div>
-    {% endfor %}
-  </div>
+<div class="container pb-5" style="margin-top: -150px; position: relative; z-index: 10;">
+  <section class="bg-dark bg-opacity-80 rounded-4 p-4 shadow-lg">
+    <h2 class="mb-4 text-white fw-bold fs-1 text-shadow">Trending Now</h2>
 
-  <h3 class="mt-5">Genres</h3>
-  <div class="d-flex flex-wrap gap-2">
-    {% for genre in genres %}
-    <a href="{% url 'browse' %}?genre={{ genre.slug }}" class="btn btn-outline-light btn-sm">{{ genre.name }}</a>
-    {% endfor %}
-  </div>
+    <div class="overflow-x-auto scrollbar-hide position-relative">
+      <div class="d-flex gap-4" style="width: max-content;">
+        {% for movie in trending %}
+        <div class="movie-card-hover">
+          <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none text-white">
+            <div class="position-relative overflow-hidden rounded-3 shadow-lg">
+              <img
+                src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+                class="img-fluid rounded-3" style="width: 270px; height: 390px; object-fit: cover;"
+                alt="{{ movie.title }}">
+
+              <div class="position-absolute top-0 start-0 m-3">
+                <span class="display-3 fw-bold text-white opacity-80" style="text-shadow: 4px 4px 12px black;">
+                  {{ forloop.counter }}
+                </span>
+              </div>
+
+              <div class="position-absolute bottom-0 start-0 end-0 bg-gradient p-3">
+                <h6 class="mb-0 fw-bold">{{ movie.title }}</h6>
+                <small class="text-white-70">{{ movie.release_year.year }} • {{ movie.duration }} min</small>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="position-absolute top-50 end-0 translate-middle-y me-4">
+        <div class="bg-white bg-opacity-25 rounded-circle p-3 shadow">
+          <i class="bi bi-chevron-right text-white fs-1"></i>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
+
+<div class="container py-5">
+  <section class="mb-5">
+    <h2 class="mb-4 text-white">Top English Movies</h2>
+    <div class="row row-cols-2 row-cols-md-4 g-4">
+      {% for movie in top_english %}
+      <div class="col">
+        <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none text-white">
+          <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+            class="img-fluid rounded shadow-lg hover-scale" style="height: 400px; object-fit: cover;"
+            alt="{{ movie.title }}">
+          <p class="text-center mt-2 small fw-bold">{{ movie.title }}</p>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-4 text-white">Genres</h2>
+    <div class="d-flex flex-wrap gap-3">
+      {% for genre in genres %}
+      <a href="{% url 'browse' %}?genre={{ genre.slug }}"
+        class="btn btn-outline-secondary px-4 py-2 rounded-pill hover-danger">
+        {{ genre.name }}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero {
+    min-height: 90vh;
+  }
+
+  .movie-card-hover {
+    transition: all 0.3s;
+  }
+
+  .movie-card-hover:hover {
+    transform: translateY(-10px);
+  }
+
+  .hover-scale {
+    transition: transform 0.3s;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  .hover-danger:hover {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bg-gradient {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  }
+
+  .movie-card-hover {
+    transition: all 0.4s ease;
+  }
+
+  .movie-card-hover:hover {
+    transform: translateY(-12px) scale(1.04);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-$('.favorite-btn').on('click', function(){
-  const slug = $(this).data('slug');
+$(document).on('click', '.add-fav, .favorite-btn', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
   const btn = $(this);
-  $.post("{% url 'api_toggle_favorite' %}", {slug: slug, csrfmiddlewaretoken: '{{ csrf_token }}'})
-    .done(function(data){
-      if(data.success){
-        btn.text(data.is_favorite ? 'Remove from Favorites' : 'Add to Favorites');
-      } else if (data.message) {
-        alert(data.message);
+  const slug = btn.data('slug');
+  const isBigButton = btn.hasClass('favorite-btn');
+
+  fetch("{% url 'api_toggle_favorite' %}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}',
+    },
+    body: JSON.stringify({ slug: slug })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      if (isBigButton) {
+        btn.text(data.is_favorite ? 'Remove from Favorites' : '+ Add to Favorites');
+        btn.toggleClass('btn-danger', data.is_favorite);
+        btn.toggleClass('btn-outline-light', !data.is_favorite);
+      } else {
+        btn.html(data.is_favorite ? 'Heart' : 'Heart');
+        btn.toggleClass('btn-danger text-white', data.is_favorite);
+        btn.toggleClass('btn-outline-light', !data.is_favorite);
       }
-    });
+    } 
+    else if (data.login_required) {
+      // لو مش مسجل دخول → يحولك للـ login ويرجعك تاني
+      window.location.href = "{% url 'login' %}?next=" + window.location.pathname;
+    }
+    else {
+      alert(data.error || 'Error!');
+    }
+  })
+  .catch(err => console.error(err));
 });
 </script>
 {% endblock %}
