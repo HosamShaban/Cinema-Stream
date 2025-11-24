@@ -35,6 +35,23 @@ class Movie(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+class Series(models.Model):
+    tmdb_id = models.IntegerField(unique=True)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    first_air_date = models.DateField(null=True, blank=True)
+    seasons_count = models.IntegerField(default=0)
+    episodes_count = models.IntegerField(default=0)
+    overall_rating = models.FloatField(default=0)
+    poster = models.ImageField(upload_to='series_posters/', null=True, blank=True)
+    backdrop = models.ImageField(upload_to='series_backdrops/', null=True, blank=True)
+    trailer_url = models.URLField(null=True, blank=True)
+    is_premium = models.BooleanField(default=False)
+    content_type = models.CharField(max_length=10, default='series') 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)   
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
