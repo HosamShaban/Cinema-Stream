@@ -7,12 +7,12 @@ from datetime import datetime
 from django.utils.text import slugify
 
 class Command(BaseCommand):
-    help = 'Import 500+ movies from TMDB - مضاد للتكرار في slug'
+    help = 'Import 500+ movies from TMDB slug'
 
     def handle(self, *args, **options):
         added = 0
         for page in range(1, 26):
-            self.stdout.write(f"جاري جلب الصفحة {page}...")
+            self.stdout.write(f"load {page}...")
             data = get_popular_movies(page)
             
             for item in data['results']:
@@ -88,10 +88,10 @@ class Command(BaseCommand):
 
                 movie.save()
                 added += 1
-                self.stdout.write(self.style.SUCCESS(f"تم إضافة {added}: {movie.title} ({release_year.year})"))
+                self.stdout.write(self.style.SUCCESS(f"done {added}: {movie.title} ({release_year.year})"))
 
                 if added >= 500:
-                    self.stdout.write(self.style.SUCCESS("تم بنجاحتم إضافة 500 فيلم عالمي!"))
+                    self.stdout.write(self.style.SUCCESS("done add 500 movies"))
                     return
 
-        self.stdout.write(self.style.SUCCESS(f"تم الكل! أُضيف {added} فيلم"))
+        self.stdout.write(self.style.SUCCESS(f"done {added} movies"))
