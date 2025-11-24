@@ -32,31 +32,36 @@
       </div>
     </div>
     <div class="col-lg-8">
+      <!-- Favorites Section -->
       <div class="mb-5">
-        <h4 class="text-white mb-4">Favorites ({{ user_favorites|length }})</h4>
-        {% if user_favorites %}
+        <h4 class="text-white mb-4">My Favorites ({{ favorites_count }})</h4>
+        
+        <!-- Movies -->
+        {% if favorite_movies %}
+        <h5 class="text-white-60 mb-3">🎬 Movies ({{ favorite_movies|length }})</h5>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
-          {% for movie in user_favorites %}
+          {% for movie in favorite_movies %}
           <div class="col">
-            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden movie-card-hover">
 
               <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
-                <img
-                  src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-                  class="card-img-top rounded-4" style="height: 350px; object-fit: cover; transition: transform 0.3s;"
-                  alt="{{ movie.title }}">
+                <img src="{{ movie.poster.url }}" 
+                     class="card-img-top rounded-4" 
+                     style="height: 250px; object-fit: cover; transition: transform 0.3s;"
+                     alt="{{ movie.title }}"
+                     onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
               </a>
 
-              <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm
-    {% if movie in user_favorites %}btn-danger text-white{% else %}btn-outline-light{% endif %}"
-                data-slug="{{ movie.slug }}" style="z-index: 10; width: 45px; height: 45px;">
-                {% if movie in user_favorites %}♥{% else %}♡{% endif %}
+              <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm btn-danger text-white"
+                data-slug="{{ movie.slug }}" data-type="movie"
+                style="z-index: 10; width: 40px; height: 40px;" title="Remove from favorites">
+                ♥
               </button>
 
-              <div class="card-body d-flex flex-column">
-                <h6 class="card-title fw-bold text-white mb-2 text-truncate">{{ movie.title }}</h6>
+              <div class="card-body d-flex flex-column p-3">
+                <h6 class="card-title fw-bold text-white mb-2 text-truncate small">{{ movie.title }}</h6>
                 <p class="text-white-50 small mb-2">
-                  {{ movie.release_year.year }} • {{ movie.duration }} min
+                  {{ movie.release_year }} • {{ movie.duration }} min
                 </p>
                 <div class="d-flex flex-wrap gap-1 mt-auto">
                   {% for genre in movie.genres.all|slice:":2" %}
@@ -68,11 +73,53 @@
           </div>
           {% endfor %}
         </div>
+        {% endif %}
 
-        {% else %}
+        <!-- Series -->
+        {% if favorite_series %}
+        <h5 class="text-white-60 mt-5 mb-3">📺 Series ({{ favorite_series|length }})</h5>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+          {% for series in favorite_series %}
+          <div class="col">
+            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden movie-card-hover">
+
+              <a href="{% url 'series_detail' series.slug %}" class="text-decoration-none">
+                <img src="{{ series.poster.url }}" 
+                     class="card-img-top rounded-4" 
+                     style="height: 250px; object-fit: cover; transition: transform 0.3s;"
+                     alt="{{ series.title }}"
+                     onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
+              </a>
+
+              <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm btn-danger text-white"
+                data-slug="{{ series.slug }}" data-type="series"
+                style="z-index: 10; width: 40px; height: 40px;" title="Remove from favorites">
+                ♥
+              </button>
+
+              <div class="card-body d-flex flex-column p-3">
+                <h6 class="card-title fw-bold text-white mb-2 text-truncate small">{{ series.title }}</h6>
+                <p class="text-white-50 small mb-3">
+                  {{ series.first_air_date }} • {{ series.seasons_count }} season{{ series.seasons_count|pluralize }}
+                </p>
+                <div class="d-flex flex-wrap gap-1 mt-auto">
+                  {% for genre in series.genres.all|slice:":2" %}
+                  <span class="badge bg-primary small">{{ genre.name }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not favorite_movies and not favorite_series %}
         <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
+          <i class="fa-regular fa-heart text-white-50 mb-3" style="font-size: 3rem;"></i>
           <h5 class="text-muted">No favorites yet.</h5>
-          <p class="text-muted">Start adding movies you love!</p>
+          <p class="text-muted">Start adding movies and series you love!</p>
+          <a href="{% url 'browse' %}" class="btn btn-outline-light mt-2">Browse Content</a>
         </div>
         {% endif %}
       </div>
@@ -93,10 +140,11 @@
                 </h6>
                 <p class="mb-2 text-warning">
                   {% for i in "12345"|make_list %}
-                  {% if forloop.counter <= r.rating %}★{% else %}☆{% endif %} {% endfor %} <span
-                    class="text-white-50 ms-2">{{ r.rating }}/5</span>
+                  {% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}
+                  {% endfor %}
+                  <span class="text-white-50 ms-2">{{ r.rating }}/5</span>
                 </p>
-                <p class="mb-0">{{ r.content }}</p>
+                <p class="mb-0">{{ r.comment }}</p>
               </div>
               <small class="text-muted">{{ r.created_at|date:"M j, Y" }}</small>
             </div>
@@ -110,7 +158,6 @@
         </div>
         {% endif %}
       </div>
-
     </div>
   </div>
 </div>
@@ -118,17 +165,18 @@
 
 {% block extra_css %}
 <style>
-  .movie-card-hover:hover img {
-    transform: scale(1.08);
-  }
+.movie-card-hover:hover img {
+  transform: scale(1.08);
+}
 
-  .movie-card-hover:hover {
-    transform: translateY(-8px);
-  }
+.movie-card-hover:hover {
+  transform: translateY(-8px);
+  transition: all 0.3s ease;
+}
 
-  .bg-gradient {
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-  }
+.bg-gradient {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+}
 </style>
 {% endblock %}
 
@@ -137,8 +185,12 @@
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".add-fav").forEach(btn => {
         btn.addEventListener("click", function (e) {
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault(); 
+            e.stopPropagation();
+            
             const slug = this.dataset.slug;
+            const type = this.dataset.type || "movie";
+            const card = this.closest(".col");
 
             function getCookie(name) {
                 let cookieValue = null;
@@ -161,27 +213,87 @@ document.addEventListener("DOMContentLoaded", function () {
                     "Content-Type": "application/json",
                     "X-CSRFToken": getCookie("csrftoken")
                 },
-                body: JSON.stringify({ slug: slug })
+                body: JSON.stringify({ 
+                    slug: slug,
+                    content_type: type
+                })
             })
-            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(r => {
+                if (!r.ok) throw new Error('Network error');
+                return r.json();
+            })
             .then(data => {
-                if (data.is_favorite) {
-                    btn.innerHTML = "♥"; btn.classList.replace("btn-outline-light", "btn-danger");
-                } else {
-                    const card = btn.closest(".col");
-                    card.style.transition = "all 0.5s ease"; card.style.opacity = "0"; card.style.transform = "scale(0.8)";
-                    setTimeout(() => card.remove(), 500);
-
-                    const count = document.querySelector("h4.text-white");
-                    if (count) {
-                        let num = parseInt(count.textContent.match(/\d+/)[0]) - 1;
-                        count.innerHTML = `Favorites (${num})`;
-                        if (num === 0) location.reload();
-                    }
+                if (data.success && !data.is_favorite) {
+                    // إخفاء البطاقة بتأثير
+                    card.style.transition = "all 0.5s ease";
+                    card.style.opacity = "0";
+                    card.style.transform = "scale(0.8)";
+                    
+                    setTimeout(() => {
+                        card.remove();
+                        
+                        // إعادة تحميل الصفحة لتحديث جميع العدادات
+                        const remainingCards = document.querySelectorAll(".col");
+                        if (remainingCards.length === 0) {
+                            location.reload(); // إعادة تحميل إذا لم يبقى أي عنصر
+                        } else {
+                            // تحديث العدادات يدوياً
+                            updateAllCounts();
+                        }
+                    }, 500);
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error removing from favorites');
             });
         });
     });
+
+    function updateAllCounts() {
+        const movieCards = document.querySelectorAll('[data-type="movie"]');
+        const seriesCards = document.querySelectorAll('[data-type="series"]');
+        
+        const movieCount = movieCards.length;
+        const seriesCount = seriesCards.length;
+        const totalCount = movieCount + seriesCount;
+
+        const mainTitle = document.querySelector("h4.text-white");
+        if (mainTitle) {
+            mainTitle.innerHTML = `My Favorites (${totalCount})`;
+        }
+
+        const movieSection = document.querySelector("h5.text-white-60");
+        if (movieSection && movieSection.textContent.includes('Movies')) {
+            movieSection.innerHTML = `🎬 Movies (${movieCount})`;
+            if (movieCount === 0) {
+                movieSection.style.display = 'none';
+            }
+        }
+
+        const seriesSections = document.querySelectorAll("h5.text-white-60");
+        seriesSections.forEach(section => {
+            if (section.textContent.includes('Series')) {
+                section.innerHTML = `📺 Series (${seriesCount})`;
+                if (seriesCount === 0) {
+                    section.style.display = 'none';
+                }
+            }
+        });
+
+        if (totalCount === 0) {
+            const favoritesContainer = document.querySelector(".mb-5");
+            const noFavoritesHTML = `
+                <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
+                    <i class="fa-regular fa-heart text-white-50 mb-3" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted">No favorites yet.</h5>
+                    <p class="text-muted">Start adding movies and series you love!</p>
+                    <a href="{% url 'browse' %}" class="btn btn-outline-light mt-2">Browse Content</a>
+                </div>
+            `;
+            favoritesContainer.innerHTML += noFavoritesHTML;
+        }
+    }
 });
 </script>
 {% endblock %}

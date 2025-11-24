@@ -1,287 +1,406 @@
 {% extends 'index.html' %}
-{% load static %}
 {% block title %}Cinema Stream - Home{% endblock %}
+{% load static %}
+
 {% block content %}
 
 <div class="container-fluid py-5 px-4">
   <h2 class="text-white fw-bold fs-1 mb-5 text-shadow">Recently Added</h2>
-
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 justify-content-center">
-    {% for movie in recently_added %}
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 justify-content-center">
+    {% for item in recently_added %}
+    {% if item.slug %}
     <div class="col">
-      <div class="card-movie h-100 bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift">
-        <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
-          <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-            class="card-img-top" style="height: 450px; object-fit: cover; " alt="{{ movie.title }}" onmouseover="this.style.transform='scale(1.06)'"
-              onmouseout="this.style.transform='scale(1)'">
-        </a>
+      <div class="card-movie h-100 bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift position-relative">
+        <div class="position-absolute top-0 end-0 m-2">
+          {% if item.content_type == 'series' %}
+          <span class="badge bg-primary px-2 py-1 small">
+            <i class="fa-solid fa-tv me-1"></i>SERIES
+          </span>
+          {% else %}
+          <span class="badge bg-success px-2 py-1 small">
+            <i class="fa-solid fa-film me-1"></i>MOVIE
+          </span>
+          {% endif %}
+        </div>
 
+        <a href="{% if item.content_type == 'series' %}{% url 'series_detail' item.slug %}{% else %}{% url 'movie_detail' item.slug %}{% endif %}"
+          class="text-decoration-none">
+          <img src="{{ item.get_poster_url }}" class="card-img-top default-poster"
+            style="height: 320px; object-fit: cover;" alt="{{ item.title|default:'No Title' }}"
+            onerror="this.onerror=null; this.src='{% static 'images/default_poster.jpg' %}'">
+        </a>
         <div class="card-body p-3 d-flex flex-column">
-          <h6 class="text-white fw-bold mb-2 text-truncate">{{ movie.title }}</h6>
+          <h6 class="text-white fw-bold mb-2 text-truncate" title="{{ item.title|default:'No Title' }}">
+            {{ item.title|default:"No Title" }}
+          </h6>
 
           <div class="d-flex align-items-center gap-2 small text-warning mb-2">
-            {% with ''|center:movie.overall_rating as range %}
-            {% for i in range %}⭐{% endfor %}
-            {% endwith %}
-            <span class="text-white fw-bold">{{ movie.overall_rating|floatformat:1 }}</span>
+            <i class="fa-solid fa-star text-warning"></i>
+            <span class="text-white fw-bold">{{ item.overall_rating|floatformat:1|default:"0.0" }}</span>
+            <span class="text-white-60">/10</span>
           </div>
 
-          <p class="text-white-60 small mb-2">
-            {{ movie.release_year.year }} • {{ movie.duration }} min
-          </p>
+          <div class="text-white-60 small mb-2">
+            {% if item.content_type == 'series' %}
+            <div>
+              <i class="fa-regular fa-calendar me-1"></i>
+              {{ item.first_air_date|default:"2024" }}
+            </div>
+            <div>
+              <i class="fa-solid fa-layer-group me-1"></i>
+              {{ item.seasons_count|default:"1" }} Season{{ item.seasons_count|default:1|pluralize }}
+            </div>
+            {% else %}
+            <div>
+              <i class="fa-regular fa-calendar me-1"></i>
+              {{ item.release_year|default:"2024" }}
+            </div>
+            <div>
+              <i class="fa-regular fa-clock me-1"></i>
+              {{ item.duration|default:"120" }} min
+            </div>
+            {% endif %}
+          </div>
 
           <div class="d-flex flex-wrap gap-1 mb-3">
-            {% for genre in movie.genres.all|slice:":2" %}
+            {% if item.genres.all %}
+            {% for genre in item.genres.all|slice:":2" %}
             <span class="badge bg-danger small px-2 py-1">{{ genre.name }}</span>
             {% endfor %}
+            {% else %}
+            <span class="badge bg-secondary small px-2 py-1">
+              {% if item.content_type == 'series' %}Drama{% else %}Action{% endif %}
+            </span>
+            {% endif %}
           </div>
 
           <div class="mt-auto d-flex gap-2">
-            <a href="{% url 'movie_detail' movie.slug %}"
+            <a href="{% if item.content_type == 'series' %}{% url 'series_detail' item.slug %}{% else %}{% url 'movie_detail' item.slug %}{% endif %}"
               class="btn btn-danger btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
               <i class="fa-solid fa-circle-info"></i>
-              View Details
+              More Details
             </a>
-
-            <button class="btn btn-outline-light btn-sm px-3 add-fav" data-slug="{{ movie.slug }}">
-              {% if movie in user_favorites %}
-              <i class="fa-regular fa-heart heart-icon"></i>
+            <button class="btn btn-outline-light btn-sm px-3 add-fav" data-slug="{{ item.slug }}"
+              data-type="{{ item.content_type }}" title="Add to favorites">
+              {% if item.slug in user_favorites %}
+              <i class="fa-solid fa-heart text-danger"></i>
               {% else %}
-              <i class="fa-solid fa-heart heart-icon"></i>
+              <i class="fa-regular fa-heart"></i>
               {% endif %}
             </button>
           </div>
         </div>
       </div>
     </div>
+    {% endif %}
     {% empty %}
     <div class="col-12 text-center py-5">
-      <p class="text-white-50 fs-3">No movies added recently.</p>
+      <i class="fa-solid fa-film text-white-50 mb-3" style="font-size: 3rem;"></i>
+      <p class="text-white-50 fs-5">No content added recently.</p>
+      <a href="#" class="btn btn-outline-light mt-2">Explore Catalog</a>
     </div>
     {% endfor %}
   </div>
-</div>
 
-<div class="container-fluid py-5 px-4 bg-black bg-opacity-60" style="margin-top: -20px;">
-  <h2 class="text-white fw-bold fs-1 mb-5 text-shadow">Top English Movies</h2>
 
-  <div class="overflow-x-auto scrollbar-hide position-relative">
-    <div class="d-flex gap-4 pb-5" style="min-width: max-content;">
-      {% for movie in top_english %}
-      <div class="flex-shrink-0" style="width: 320px;">
-        <div class="card-movie bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift d-flex flex-column"
-          style="height: 680px; transition: all 0.4s ease;">
-
-          <a href="{% url 'movie_detail' movie.slug %}" class="d-block overflow-hidden rounded-top-4">
-            <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-              class="w-100" style="height: 440px; object-fit: cover; transition: transform 0.5s;"
-              alt="{{ movie.title }}" onmouseover="this.style.transform='scale(1.08)'"
-              onmouseout="this.style.transform='scale(1)'">
-          </a>
-
-          <div class="p-4 text-white d-flex flex-column flex-grow-1">
-            <h5 class="fw-bold mb-3 text-truncate">{{ movie.title }}</h5>
-
-            <div class="d-flex align-items-center small gap-2 mb-3" style="font-size: 0.9rem;">
-              <span>⭐</span>
-              <span class="fw-bold">{{ movie.overall_rating|floatformat:1 }}</span>
-              <span class="text-white-50">/ 10</span>
-            </div>
-
-            <p class="text-white-60 small mb-2">
-              {{ movie.release_year.year }} • {{ movie.duration }} min
-            </p>
-
-            <div class="d-flex flex-wrap gap-2 mb-4">
-              {% for genre in movie.genres.all|slice:":3" %}
-              <span class="badge bg-danger px-3 py-1 small rounded-pill">{{ genre.name }}</span>
-              {% endfor %}
-            </div>
-
-            <div class="mt-auto d-flex gap-3">
-
-              <a href="{% url 'movie_detail' movie.slug %}"
-                class="btn btn-danger btn-md flex-fill d-flex align-items-center justify-content-center gap-2 rounded-pill shadow-sm">
-                <i class="fa-solid fa-film"></i>
-                <span>Watch Now</span>
-              </a>
-
-              <button class="btn btn-outline-light btn-md rounded-circle add-fav shadow-sm" data-slug="{{ movie.slug }}"
-                style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                {% if movie in user_favorites %}
-                <i class="fa-regular fa-heart heart-icon"></i>
+  <div class="container-fluid py-5 px-4 bg-black bg-opacity-60" style="margin-top: -5px;">
+    <h2 class="text-white fw-bold fs-1 mb-5 text-shadow">Top English Movies</h2>
+    <div class="overflow-x-auto scrollbar-hide">
+      <div class="d-flex gap-4 pb-5" style="min-width: max-content;">
+        {% for movie in top_english_movies %}
+        {% if movie.slug %}
+        <div class="flex-shrink-0" style="width: 320px;">
+          <div class="card-movie bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift"
+            style="height: 680px;">
+            <a href="{% url 'movie_detail' movie.slug %}">
+              <img src="{{ movie.get_poster_url }}" class="w-100 poster-image" style="height: 440px; object-fit: cover; transition: all 0.4s ease"
+                alt="{{ movie.title }}">
+            </a>
+            <div class="p-4 text-white">
+              <h5 class="fw-bold mb-3 text-truncate">{{ movie.title|default:"No Title" }}</h5>
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span>★</span>
+                <strong>{{ movie.overall_rating|floatformat:1|default:"0.0" }}</strong>/10
+              </div>
+              <p class="text-white-60 small">
+                {{ movie.release_year|default:"2024" }} • {{ movie.duration|default:"120" }} min
+              </p>
+              <div class="d-flex flex-wrap gap-2 mb-4">
+                {% if movie.genres.all %}
+                {% for genre in movie.genres.all|slice:":3" %}
+                <span class="badge bg-danger small rounded-pill">{{ genre.name }}</span>
+                {% endfor %}
                 {% else %}
-                <i class="fa-solid fa-heart heart-icon"></i>
+                <span class="badge bg-secondary small rounded-pill">No Genre</span>
                 {% endif %}
-              </button>
-
+              </div>
+              <div class="d-flex gap-3">
+                <a href="{% url 'movie_detail' movie.slug %}" class="btn btn-danger flex-fill rounded-pill">
+                  <i class="fa-solid fa-circle-info"></i> More Details
+                </a>
+                <button class="btn btn-outline-light rounded-circle add-fav" data-slug="{{ movie.slug }}"
+                  data-type="movie">
+                  {% if movie.slug in user_favorites %}
+                  <i class="fa-solid fa-heart text-danger"></i>
+                  {% else %}
+                  <i class="fa-regular fa-heart"></i>
+                  {% endif %}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        {% endif %}
+        {% empty %}
+        <div class="flex-shrink-0 text-white fs-4">No top English movies found.</div>
+        {% endfor %}
       </div>
-      {% empty %}
-      <div class="text-white-50 fs-4 ps-4">No English movies available yet.</div>
+    </div>
+  </div>
+
+
+  <div class="container-fluid py-5 px-4 bg-black bg-opacity-60">
+    <div class="d-flex align-items-center justify-content-between mb-5">
+      <h2 class="text-white fw-bold fs-1 text-shadow mb-0">Top English Series</h2>
+      <a href="{% url 'browse' %}" class="btn btn-outline-light btn-sm rounded-pill">
+        View All <i class="fa-solid fa-arrow-right ms-2"></i>
+      </a>
+    </div>
+
+    <div class="overflow-x-auto scrollbar-hide">
+      <div class="d-flex gap-4 pb-5" style="min-width: max-content;">
+        {% for series in top_english_series %}
+        {% if series.slug %}
+        <div class="flex-shrink-0" style="width: 320px;">
+          <div class="card-series bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift position-relative"
+            style="height: 700px;">
+
+            <div class="position-relative overflow-hidden">
+
+              <a href="{% url 'series_detail' series.slug %}" class="text-decoration-none">
+                <img src="{{ series.poster.url }}" class="w-100 series-poster" style="height: 450px; object-fit: cover;"
+                  alt="{{ series.title }}"
+                  onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
+              </a>
+
+              <div class="position-absolute top-0 start-0 m-3">
+                <span class="badge bg-primary px-3 py-2 small fw-bold">
+                  <i class="fa-solid fa-tv me-1"></i>SERIES
+                </span>
+              </div>
+
+              <div class="position-absolute top-0 end-0 m-3">
+                <span class="badge bg-warning text-dark px-2 py-2 small fw-bold">
+                  <i class="fa-solid fa-star me-1"></i>{{ series.overall_rating|floatformat:1|default:"0.0" }}
+                </span>
+              </div>
+            </div>
+
+            <div class="p-4 text-white d-flex flex-column h-100">
+              <h5 class="fw-bold mb-3 text-truncate" title="{{ series.title|default:'No Title' }}">
+                {{ series.title|default:"No Title" }}
+              </h5>
+
+              <div class="mb-3">
+                <div class="d-flex align-items-center gap-3 text-white-60 small mb-2">
+                  <span>
+                    <i class="fa-regular fa-calendar me-1"></i>
+                    {{ series.first_air_date|date:"Y"|default:"2024" }}
+                  </span>
+                  <span>
+                    <i class="fa-solid fa-layer-group me-1"></i>
+                    {{ series.seasons_count|default:"1" }} Season{{ series.seasons_count|default:1|pluralize }}
+                  </span>
+                </div>
+
+                <div class="text-white-60 small">
+                  <i class="fa-solid fa-list-ol me-1"></i>
+                  {{ series.episodes_count|default:"10" }} Episodes
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2 mb-4">
+                {% for genre in series.genres.all|slice:":2" %}
+                <span class="badge bg-danger small px-2 py-1 rounded-pill">
+                  {{ genre.name }}
+                </span>
+                {% empty %}
+                <span class="badge bg-secondary small px-2 py-1 rounded-pill">
+                  Drama
+                </span>
+                {% endfor %}
+              </div>
+
+              <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem; mb-4">
+                <div class="d-flex gap-2">
+                  <a href="{% url 'series_detail' series.slug %}"
+                    class="btn btn-outline-danger flex-fill rounded-pill d-flex align-items-center justify-content-center gap-2 py-2">
+                    <i class="fa-solid fa-circle-info"></i>
+                    More Details
+                  </a>
+                  <button class="btn btn-outline-light rounded-circle add-fav" data-slug="{{ series.slug }}"
+                    data-type="series" style="width: 44px; height: 44px;">
+                    {% if series.slug in user_favorites %}
+                    <i class="fa-solid fa-heart text-danger"></i>
+                    {% else %}
+                    <i class="fa-regular fa-heart"></i>
+                    {% endif %}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% empty %}
+        <div class="flex-shrink-0 text-center py-5" style="width: 320px;">
+          <i class="fa-solid fa-tv text-white-50 mb-3" style="font-size: 3rem;"></i>
+          <p class="text-white-60 fs-5">No English series found.</p>
+          <a href="#" class="btn btn-outline-light btn-sm">Browse Series</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="container py-5 text-center">
+    <h2 class="text-white fw-bold fs-2 mb-5">Browse by Genre</h2>
+    <div class="d-flex flex-wrap justify-content-center gap-3">
+      {% for genre in genres %}
+      <a href="{% url 'browse' %}?genre={{ genre.slug }}"
+        class="btn btn-outline-danger px-5 py-3 rounded-pill fs-5 hover-fill">{{ genre.name }}</a>
       {% endfor %}
     </div>
   </div>
 
-  <div class="container py-5">
-    <section>
-      <h2 class="text-white fw-bold fs-2 mb-4">Browse by Genre</h2>
-      <div class="d-flex flex-wrap gap-3">
-        {% for genre in genres %}
-        <a href="{% url 'browse' %}?genre={{ genre.slug }}"
-          class="btn btn-outline-danger px-5 py-3 rounded-pill fs-5 hover-fill">
-          {{ genre.name }}
-        </a>
-        {% endfor %}
-      </div>
-    </section>
-  </div>
+  {% endblock %}
 
-</div>
 
-{% endblock %}
+  {% block extra_css %}
+  <style>
+    .poster-image {
+      transition: all 0.4s ease !important;
+      transform-origin: center center;
+    }
 
-{% block extra_css %}
-<style>
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+    .poster-link:hover .poster-image {
+      transform: scale(1.08);
+      filter: brightness(1.1);
+    }
 
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
 
-  .hover-lift {
-    transition: all 0.4s ease;
-  }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
-  .hover-lift:hover {
-    transform: translateY(-15px);
-    box-shadow: 0 20px 40px rgba(220, 53, 69, 0.5) !important;
-  }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
 
-  .card-movie {
-    background: #111;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
+    .hover-lift {
+      transition: all 0.4s ease;
+    }
 
-  .btn-danger {
-    background: linear-gradient(45deg, #dc3545, #c82333);
-    border: none;
-    font-weight: 600;
-  }
+    .hover-lift:hover {
+      transform: translateY(-15px);
+      box-shadow: 0 20px 40px rgba(220, 53, 69, 0.5) !important;
+    }
 
-  .btn-danger:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4);
-  }
+    .card-movie {
+      background: #111;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
 
-  .btn-outline-light:hover {
-    background: #dc3545 !important;
-    border-color: #dc3545 !important;
-  }
+    .btn-danger {
+      background: linear-gradient(45deg, #dc3545, #c82333);
+      border: none;
+      font-weight: 600;
+    }
 
-  .hover-scale {
-    transition: transform 0.3s ease;
-  }
+    .btn-danger:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4);
+    }
 
-  .hover-scale:hover {
-    transform: scale(1.15);
-  }
+    .btn-outline-light:hover {
+      background: #dc3545 !important;
+      border-color: #dc3545 !important;
+    }
 
-  .text-shadow {
-    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
-  }
+    .text-shadow {
+      text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+    }
 
-  .add-fav {
-    transition: all 0.2s ease;
-  }
+    .heart-icon {
+      font-size: 20px;
+      transition: all 0.2s ease;
+    }
 
-  .heart-icon {
-    font-size: 20px;
-    transition: color 0.2s ease, transform 0.2s ease;
-  }
+    .add-fav:hover .heart-icon {
+      transform: scale(1.2);
+    }
+  </style>
+  {% endblock %}
 
-  .add-fav .fa-solid {
-    color: #dc3545 !important;
-  }
+  {% block scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".add-fav").forEach(button => {
+        button.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
 
-  .add-fav:hover {
-    background: #dc3545 !important;
-    border-color: #dc3545 !important;
-  }
+          const slug = this.dataset.slug;
+          const type = this.dataset.type || "movie";
+          const icon = this.querySelector("i");
 
-  .add-fav:hover .heart-icon {
-    color: #dc3545 !important;
-    transform: scale(1.2);
-  }
-</style>
-{% endblock %}
+          console.log('Sending favorite request:', { slug, type });
 
-{% block scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".add-fav").forEach(function (button) {
-      button.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const slug = this.getAttribute("data-slug");
-        const icon = this.querySelector("i");
-        function getCookie(name) {
-          let cookieValue = null;
-          if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-              const cookie = cookies[i].trim();
-              if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-              }
-            }
-          }
-          return cookieValue;
-        }
-
-        fetch("{% url 'api_toggle_favorite' %}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken")
-          },
-          body: JSON.stringify({ slug: slug })
-        })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
+          fetch("{% url 'api_toggle_favorite' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify({
+              slug: slug,
+              content_type: type
+            })
           })
-          .then(data => {
-            if (data.success) {
-              if (data.is_favorite) {
-                icon.classList.remove("fa-regular");
-                icon.classList.add("fa-solid");
-                icon.style.color = "#dc3545";
+            .then(r => {
+              if (!r.ok) {
+                throw new Error(`HTTP error! status: ${r.status}`);
+              }
+              return r.json();
+            })
+            .then(data => {
+              console.log('Favorite response:', data);
+              if (data.success) {
+                if (data.is_favorite) {
+                  icon.classList.replace("fa-regular", "fa-solid");
+                  icon.style.color = "#dc3545";
+                } else {
+                  icon.classList.replace("fa-solid", "fa-regular");
+                  icon.style.color = "";
+                }
+              } else if (data.login_required) {
+                window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.href);
               } else {
-                icon.classList.remove("fa-solid");
-                icon.classList.add("fa-regular");
-                icon.style.color = "";
+                console.error('API Error:', data.error);
+                alert('Error: ' + (data.error || 'Unknown error'));
               }
-            } else if (data.login_required) {
-              window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.href);
-            } else {
-              alert(data.error || "error");
-            }
-          })
-          .catch(error => {
-            console.error("Error:", error);
-            alert("error");
-          });
+            })
+            .catch(error => {
+              console.error('Favorite error:', error);
+              alert('Network error: ' + error.message);
+            });
+        });
       });
+
+      function getCSRFToken() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        return csrfToken ? csrfToken.value : '';
+      }
     });
-  });
-</script>
-{% endblock %}
+  </script>
+  {% endblock %}

@@ -3,6 +3,7 @@ import re
 import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
+from django.forms import ValidationError
 
 class Genre(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -22,7 +23,7 @@ class Movie(models.Model):
     backdrop = models.ImageField(upload_to='backdrops/', blank=True, null=True)
     trailer_url = models.URLField(blank=True, null=True)
     video_url = models.URLField(blank=True, null=True)
-    release_year = models.DateField()
+    release_year = models.PositiveIntegerField(null=True, blank=True, default=2020)
     poster_path   = models.CharField(max_length=200, blank=True, null=True)
     backdrop_path = models.CharField(max_length=200, blank=True, null=True)
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
@@ -35,22 +36,48 @@ class Movie(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def get_poster_url(self):
+        if self.poster and hasattr(self.poster, 'url'):
+            return self.poster.url
+        
+        elif self.poster_path:
+            if self.poster_path.startswith('http'):
+                return self.poster_path
+            else:
+                return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
+        
+        return '/static/images/default_poster.jpg'
+
+
 class Series(models.Model):
     tmdb_id = models.IntegerField(unique=True)
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     description = models.TextField()
-    first_air_date = models.DateField(null=True, blank=True)
+    first_air_date = models.PositiveIntegerField(null=True, blank=True, default=2020)
     seasons_count = models.IntegerField(default=0)
     episodes_count = models.IntegerField(default=0)
     overall_rating = models.FloatField(default=0)
+    genres = models.ManyToManyField(Genre, related_name='series', blank=True)
+    language = models.CharField(max_length=100, default='English')
+    poster_path = models.CharField(max_length=200, null=True, blank=True)
+    backdrop_path = models.CharField(max_length=200, null=True, blank=True)
     poster = models.ImageField(upload_to='series_posters/', null=True, blank=True)
     backdrop = models.ImageField(upload_to='series_backdrops/', null=True, blank=True)
     trailer_url = models.URLField(null=True, blank=True)
     is_premium = models.BooleanField(default=False)
     content_type = models.CharField(max_length=10, default='series') 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)   
+    updated_at = models.DateTimeField(auto_now=True) 
+
+    @property
+    def get_poster_url(self):
+        if self.poster and hasattr(self.poster, 'url'):
+            return self.poster.url
+        elif self.poster_path:
+            return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
+        return '/static/images/default_poster.jpg'
 
 
 class UserProfile(models.Model):
@@ -64,7 +91,7 @@ class UserProfile(models.Model):
 class Review(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 5)])
+    rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 11)])
     comment = models.TextField()
     is_approved = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -74,11 +101,25 @@ class Review(models.Model):
         unique_together = ('movie', 'user')
 
 class Favorite(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    movie = models.ForeignKey('Movie', on_delete=models.CASCADE, null=True, blank=True)
+    series = models.ForeignKey('Series', on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
-        unique_together = ('user', 'movie')
+        unique_together = [['user', 'movie'], ['user', 'series']]
+
+    def __str__(self):
+        if self.movie:
+            return f"{self.user.username} - {self.movie.title}"
+        elif self.series:
+            return f"{self.user.username} - {self.series.title}"
+        return f"{self.user.username} - Favorite"
+
+    def clean(self):
+        if self.movie and self.series:
+            raise ValidationError("Favorite cannot have both movie and series")
+        if not self.movie and not self.series:
+            raise ValidationError("Favorite must have either movie or series")
 
 def register_validator(postData, avatar_file=None):
     errors = {}
@@ -125,13 +166,20 @@ def register_validator(postData, avatar_file=None):
 
 
 def create_user(postData, avatar_file=None):
-    pw_hash = bcrypt.hashpw(postData['password'].encode(), bcrypt.gensalt()).decode()
-
-    user = User.objects.create(
-        first_name=postData['first_name'],
-        last_name=postData['last_name'],
+    username = postData['email']
+    
+    counter = 1
+    base_username = username
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}{counter}"
+        counter += 1
+    
+    user = User.objects.create_user(
+        username=username,
         email=postData['email'],
-        password=pw_hash
+        password=postData['password'],
+        first_name=postData['first_name'],
+        last_name=postData['last_name']
     )
 
     UserProfile.objects.create(
@@ -149,7 +197,10 @@ def authenticate_user(email, password):
 
 def get_logged_user(request):
     if "user_id" in request.session:
-        return User.objects.get(id=request.session['user_id'])
+        try:
+            return User.objects.get(id=request.session['user_id'])
+        except User.DoesNotExist:
+            return None
     return None
 
 
@@ -208,7 +259,7 @@ def filter_movies(genre=None, year=None, content_type=None):
 
     if year:
         try:
-            filters['release_year__year'] = int(year)
+            filters['release_year'] = int(year)
         except:
             pass
 
@@ -216,3 +267,17 @@ def filter_movies(genre=None, year=None, content_type=None):
         filters['content_type'] = content_type
 
     return Movie.objects.filter(**filters).distinct()
+
+def get_poster_url(self):
+        if self.poster:
+            return self.poster.url
+        elif self.poster_path:
+            return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
+        return '/static/default_poster.jpg'
+
+def get_poster_url(self):
+        if self.poster and hasattr(self.poster, 'url'):
+            return self.poster.url
+        elif self.poster_path:
+            return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
+        return '/static/default_poster.jpg'

@@ -1,0 +1,177 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}{{ series.title }}{% endblock %}
+
+{% block content %}
+<div class="position-relative">
+    <div class="series-backdrop" 
+         style="background-image: url('https://image.tmdb.org/t/p/w1280{{ series.backdrop_path|default:series.poster_path }}');
+                filter: blur(20px);
+                background-size: cover;
+                background-position: center;
+                position: absolute;
+                top: -50px; left: 0; right: 0; bottom: -50px;
+                z-index: -1;
+                opacity: 0.4;"></div>
+
+    <div class="container py-5">
+        <a href="javascript:history.back()" class="btn btn-sm btn-outline-light mb-4 d-inline-flex align-items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </a>
+
+        <div class="row g-5">
+            <div class="col-lg-4">
+                <div class="poster-container shadow-lg rounded-4 overflow-hidden">
+                    {% if series.poster %}
+                        <img src="{{ series.poster.url }}" 
+                             class="img-fluid w-100 rounded-4"
+                             alt="{{ series.title }}"
+                             style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
+                    {% else %}
+                        <img src="https://image.tmdb.org/t/p/w500{{ series.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+                             class="img-fluid w-100 rounded-4"
+                             alt="{{ series.title }}"
+                             style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
+                    {% endif %}
+                </div>
+
+                <div class="mt-4 p-4 bg-black bg-opacity-80 rounded-4 text-white">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="text-warning fs-4">Rating</span>
+                        <span class="fs-3 fw-bold">{{ series.overall_rating|floatformat:1 }}</span>
+                        <small class="text-muted">/10</small>
+                    </div>
+                    <p class="mb-2"><strong>First Air:</strong> {{ series.first_air_date }}</p>
+                    <p class="mb-2"><strong>Seasons:</strong> {{ series.seasons_count }}</p>
+                    <p class="mb-2"><strong>Episodes:</strong> {{ series.episodes_count }}</p>
+                    <p class="mb-3"><strong>Genres:</strong> 
+                        {% for genre in series.genres.all %}
+                        <span class="badge bg-primary me-1">{{ genre.name }}</span>
+                        {% endfor %}
+                    </p>
+
+                    <button id="favBtn" class="btn btn-warning w-100 py-3 fs-5 fw-bold" 
+                            data-slug="{{ series.slug }}" data-type="series">
+                        {% if is_favorite %}
+                        <i class="fa-solid fa-heart me-2"></i> Favorited
+                        {% else %}
+                        <i class="fa-regular fa-heart me-2"></i> Add to Favorites
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="text-white">
+                    <h1 class="display-4 fw-bold mb-3 text-shadow">{{ series.title }}</h1>
+                    <p class="lead fs-3 text-white-50 mb-4">TV Series</p>
+                    <p class="fs-5 lh-lg text-white-75">{{ series.description }}</p>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-black bg-opacity-70 p-4 rounded-4 mb-3">
+                                <h5 class="text-danger mb-3">Series Info</h5>
+                                <p class="mb-2"><strong>Language:</strong> {{ series.language|upper }}</p>
+                                <p class="mb-2"><strong>Status:</strong> 
+                                    <span class="badge {% if series.seasons_count > 1 %}bg-success{% else %}bg-warning{% endif %}">
+                                        {% if series.seasons_count > 6 %}Ongoing{% else %}Completed{% endif %}
+                                    </span>
+                                </p>
+                                <p class="mb-0"><strong>Content Type:</strong> {{ series.content_type|title }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-black bg-opacity-70 p-4 rounded-4 mb-3">
+                                <h5 class="text-primary mb-3">Watch Options</h5>
+                                {% if series.trailer_url %}
+                                <a href="{{ series.trailer_url }}" target="_blank" class="btn btn-danger btn-lg w-100 mb-3">
+                                    <i class="fa-solid fa-play me-2"></i> Watch Trailer
+                                </a>
+                                {% endif %}
+                                <button class="btn btn-outline-light btn-lg w-100">
+                                    <i class="fa-solid fa-tv me-2"></i> Watch Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary my-5">
+
+                    <h3 class="mb-4">Cast & Crew</h3>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <p class="text-white-75 fs-5">Cast information coming soon...</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.series-backdrop {
+    transform: scale(1.1);
+}
+.text-shadow {
+    text-shadow: 3px 3px 15px rgba(0,0,0,0.9);
+}
+.poster-container:hover img {
+    transform: scale(1.05);
+    transition: all 0.4s ease;
+}
+.badge {
+    font-size: 0.8em;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const favBtn = document.getElementById('favBtn');
+    if (favBtn) {
+        favBtn.addEventListener('click', function() {
+            const slug = this.dataset.slug;
+            const type = this.dataset.type;
+            const btn = this;
+            
+            fetch("{% url 'api_toggle_favorite' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ 
+                    slug: slug,
+                    content_type: type
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_favorite) {
+                        btn.innerHTML = '<i class="fa-solid fa-heart me-2"></i> Favorited';
+                        btn.classList.add('btn-danger');
+                        btn.classList.remove('btn-warning');
+                    } else {
+                        btn.innerHTML = '<i class="fa-regular fa-heart me-2"></i> Add to Favorites';
+                        btn.classList.add('btn-warning');
+                        btn.classList.remove('btn-danger');
+                    }
+                } else if (data.login_required) {
+                    window.location.href = "{% url 'login' %}?next={{ request.path }}";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating favorites');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
