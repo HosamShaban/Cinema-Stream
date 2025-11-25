@@ -23,7 +23,6 @@
       background-color: black;
       color: white;
     }
-    /* Navbar ثابت */
     .navbar {
       position: fixed;
       top: 0;
@@ -45,6 +44,75 @@
     .nav-link:hover {
       color: #dc3545 !important;
     }
+
+.search-suggestions {
+    background: #1a1a1a !important;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.search-suggestions .dropdown-item {
+    color: #fff;
+    padding: 10px 15px;
+    border-bottom: 1px solid #333;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-suggestions .dropdown-item:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.search-suggestions .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.search-suggestions .item-type {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.search-suggestions .movie-type {
+    background: #dc3545;
+}
+
+.search-suggestions .series-type {
+    background: #0d6efd;
+}
+
+.search-suggestions .item-poster {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.search-suggestions .no-results {
+    color: #999;
+    text-align: center;
+    padding: 15px;
+    font-style: italic;
+}
+
+.search-suggestions::-webkit-scrollbar {
+    width: 6px;
+}
+
+.search-suggestions::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.search-suggestions::-webkit-scrollbar-thumb {
+    background: #dc3545;
+    border-radius: 3px;
+}
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -73,18 +141,25 @@
         </li>
       </ul>
 
-      <form class="d-flex search-form me-3" action="{% url 'browse' %}">
-        <div class="input-group">
-          <input name="q" 
-                 class="form-control bg-secondary text-white border-0" 
-                 placeholder="Search movies & series..." 
-                 value="{{ request.GET.q|default:'' }}"
-                 style="min-width: 250px;">
-          <button class="btn btn-danger" type="submit">
+     <form class="d-flex search-form me-3 position-relative" action="{% url 'browse' %}" method="get" id="searchForm">
+    <div class="input-group">
+        <input name="q" 
+               class="form-control bg-secondary text-white border-0 search-input" 
+               placeholder="Search movies & series..." 
+               value="{{ request.GET.q|default:'' }}"
+               style="min-width: 250px;"
+               autocomplete="off"
+               id="searchInput">
+        <button class="btn btn-danger search-btn" type="submit">
             <i class="fa-solid fa-search"></i>
-          </button>
+        </button>
+    </div>
+    
+    <div class="search-suggestions dropdown-menu w-100 mt-1" id="searchSuggestions" style="display: none;">
+        <div class="dropdown-content">
         </div>
-      </form>
+    </div>
+</form>
 
       <ul class="navbar-nav">
         {% if request.session.user_id or user.is_authenticated %}
@@ -128,9 +203,14 @@
   </div>
 </footer>
 
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
-{% block scripts %}{% endblock %}
+{% block scripts %}
+
+
+{% endblock %}
 </body>
 </html>
