@@ -13,6 +13,7 @@ urlpatterns = [
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('movie/<slug:slug>/favorite/', views.toggle_favorite, name='toggle_favorite'),
     path('movie/<slug:slug>/review/', views.add_review, name='add_review'),
+    path('api/review/<int:review_id>/delete/', views.api_delete_review, name='api_delete_review'),
     path('about/', views.about, name='about'),
     path('api/favorite/toggle/', views.ToggleFavoriteView.as_view(), name='api_toggle_favorite'),
     path('api/review/', views.api_post_review, name='api_post_review'),

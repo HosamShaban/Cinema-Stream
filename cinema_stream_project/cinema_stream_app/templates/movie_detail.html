@@ -3,7 +3,6 @@
 {% block title %}{{ movie.title }}{% endblock %}
 
 {% block content %}
-<!-- خلفية blur للبوستر -->
 <div class="position-relative">
     <div class="movie-backdrop" 
          style="background-image: url('https://image.tmdb.org/t/p/w1280{{ movie.backdrop_path|default:movie.poster_path }}');
@@ -21,7 +20,6 @@
         </a>
 
         <div class="row g-5">
-            <!-- البوستر -->
             <div class="col-lg-4">
                 <div class="poster-container shadow-lg rounded-4 overflow-hidden">
                     <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
@@ -30,7 +28,6 @@
                          style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
                 </div>
 
-                <!-- معلومات سريعة تحت البوستر -->
                 <div class="mt-4 p-4 bg-black bg-opacity-80 rounded-4 text-white">
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <span class="text-warning fs-4">Rating</span>
@@ -45,7 +42,6 @@
                         {% endfor %}
                     </p>
 
-                    <!-- زر المفضلة كبير وجميل -->
                     <button id="favBtn" class="btn {% if is_favorite %}btn-success{% else %}btn-warning{% endif %} w-100 py-3 fs-5 fw-bold" 
                             data-slug="{{ movie.slug }}" data-type="movie">
                         {% if is_favorite %}
@@ -57,7 +53,6 @@
                 </div>
             </div>
 
-            <!-- التفاصيل والوصف والتقييمات -->
             <div class="col-lg-8">
                 <div class="text-white">
                     <h1 class="display-4 fw-bold mb-3 text-shadow">{{ movie.title }}</h1>
@@ -71,43 +66,29 @@
 
                     <hr class="border-secondary my-5">
 
-                    <!-- التقييمات -->
                     <h3 class="mb-4">Reviews <span class="text-white">({{ movie.reviews.count }})</span></h3>
                     <div id="reviews" class="mb-5">
-                        {% for r in movie.reviews.all %}
-                        <div class="bg-black bg-opacity-70 p-4 rounded-4 mb-3 border border-secondary">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <strong class="text-danger fs-5">{{ r.user.get_full_name|default:r.user.username }}</strong>
-                                    <span class="text-warning ms-3">
-                                        {% for i in "1234567890"|make_list %}
-                                            {% if forloop.counter <= r.rating %}
-                                                <i class="fa-solid fa-star text-warning"></i>
-                                            {% else %}
-                                                <i class="fa-regular fa-star text-warning"></i>
-                                            {% endif %}
-                                        {% endfor %}
-                                        ({{ r.rating }}/10)
-                                    </span>
-                                </div>
-                                <small class="text-white">{{ r.created_at|date:"M d, Y" }}</small>
-                            </div>
-                            <p class="mb-0 text-white-75">{{ r.comment }}</p>
-                        </div>
-                        {% empty %}
-                        <div class="text-center py-4">
-                            <i class="fa-regular fa-comment text-white-50 mb-3" style="font-size: 3rem;"></i>
-                            <p class="text-white fs-4">No reviews yet. Be the first!</p>
-                        </div>
-                        {% endfor %}
-                    </div>
+                     
 
-                    <!-- نموذج كتابة تقييم -->
                     {% if request.user.is_authenticated %}
                         {% if user_review %}
-                        <!-- عرض التقييم الحالي -->
                         <div class="bg-black bg-opacity-80 p-4 rounded-4 border border-success">
-                            <h4 class="mb-4 text-success">Your Review</h4>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="mb-0 text-success">Your Review</h4>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-warning btn-sm rounded-pill px-3" onclick="editReview()">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                                    </button>
+<form id="deleteYourReviewForm" class="d-inline">
+    {% csrf_token %}
+    <input type="hidden" name="review_id" value="{{ user_review.id }}">
+    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+        <i class="fa-solid fa-trash-can me-1"></i>
+        <span class="d-none d-sm-inline">Delete</span>
+    </button>
+</form>
+                                </div>
+                            </div>
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <span class="text-warning">
@@ -123,15 +104,14 @@
                                 </div>
                                 <small class="text-muted">{{ user_review.created_at|date:"M d, Y" }}</small>
                             </div>
-                            <p class="text-white-75 mb-3">{{ user_review.comment }}</p>
-                            <button class="btn btn-outline-warning btn-sm" onclick="editReview()">Edit Review</button>
+                            <p class="text-white-75 mb-0">{{ user_review.comment }}</p>
                         </div>
 
-                        <!-- نموذج تعديل التقييم (مخفي) -->
                         <div id="editReviewForm" class="bg-black bg-opacity-80 p-4 rounded-4 border border-warning mt-3" style="display: none;">
                             <h4 class="mb-4 text-warning">Edit Your Review</h4>
                             <form id="reviewForm">
                                 {% csrf_token %}
+                                <input type="hidden" name="review_id" value="{{ user_review.id }}">
                                 <div class="row g-3">
                                     <div class="col-md-3">
                                         <label class="form-label text-white">Rating</label>
@@ -158,7 +138,6 @@
                             </form>
                         </div>
                         {% else %}
-                        <!-- نموذج جديد -->
                         <div class="bg-black bg-opacity-80 p-4 rounded-4 border border-danger">
                             <h4 class="mb-4 text-danger">Write Your Review</h4>
                             <form id="reviewForm">
@@ -211,85 +190,103 @@
 .fa-star {
     font-size: 1.1em;
 }
+.btn-sm.rounded-pill {
+    transition: all 0.3s ease;
+}
+.btn-sm.rounded-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.delete-review-form button:hover {
+    background-color: var(--bs-danger) !important;
+    border-color: var(--bs-danger) !important;
+}
 </style>
 {% endblock %}
-
 {% block scripts %}
 <script>
-// زر المفضلة
-document.getElementById('favBtn').addEventListener('click', function() {
+document.getElementById('favBtn')?.addEventListener('click', function () {
     const slug = this.dataset.slug;
     const type = this.dataset.type;
     const btn = this;
-    
+
     fetch("{% url 'api_toggle_favorite' %}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": "{{ csrf_token }}"
         },
-        body: JSON.stringify({ 
-            slug: slug,
-            content_type: type
-        })
+        body: JSON.stringify({ slug: slug, content_type: type })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
             if (data.is_favorite) {
                 btn.innerHTML = '<i class="fa-solid fa-heart me-2"></i> Favorited';
-                btn.classList.add('btn-danger');
-                btn.classList.remove('btn-warning');
+                btn.classList.replace('btn-warning', 'btn-danger');
             } else {
                 btn.innerHTML = '<i class="fa-regular fa-heart me-2"></i> Add to Favorites';
-                btn.classList.add('btn-warning');
-                btn.classList.remove('btn-danger');
+                btn.classList.replace('btn-danger', 'btn-warning');
             }
         } else if (data.login_required) {
             window.location.href = "{% url 'login' %}?next={{ request.path }}";
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error updating favorites');
-    });
+    .catch(() => alert('Failed to update favorites'));
 });
 
-// إدارة التقييمات
 function editReview() {
     document.getElementById('editReviewForm').style.display = 'block';
 }
-
 function cancelEdit() {
     document.getElementById('editReviewForm').style.display = 'none';
 }
 
-// نموذج التقييم
-document.getElementById('reviewForm')?.addEventListener('submit', function(e) {
+document.getElementById('deleteYourReviewForm')?.addEventListener('submit', function (e) {
     e.preventDefault();
-    const form = this;
-    const formData = new FormData(form);
-    formData.append('slug', '{{ movie.slug }}');
-    
-    fetch("{% url 'api_post_review' %}", {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
+
+    if (!confirm(`Delete your review for:\n\n"{{ movie.title|escapejs }}"\nYour rating: {{ user_review.rating }}/10\n\n⚠️ This action cannot be undone!`)) {
+        return;
+    }
+
+    const formData = new FormData(this);
+
+    fetch(`/api/review/{{ user_review.id }}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
         body: formData
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            location.reload(); // إعادة تحميل الصفحة لعرض التقييم الجديد
+            location.reload();
         } else {
-            alert('Error: ' + data.error);
+            alert('Delete failed: ' + (data.error || 'An error occurred'));
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error submitting review');
-    });
+    .catch(() => alert('Failed to connect to server'));
+});
+
+document.getElementById('reviewForm')?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('slug', '{{ movie.slug }}');
+    formData.append('content_type', 'movie');
+
+    fetch("{% url 'api_post_review' %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to submit review'));
+        }
+    })
+    .catch(() => alert('Connection failed'));
 });
 </script>
 {% endblock %}

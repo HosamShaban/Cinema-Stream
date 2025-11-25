@@ -32,29 +32,27 @@
       </div>
     </div>
     <div class="col-lg-8">
-      <!-- Favorites Section -->
       <div class="mb-5">
         <h4 class="text-white mb-4">My Favorites ({{ favorites_count }})</h4>
-        
-        <!-- Movies -->
+
         {% if favorite_movies %}
         <h5 class="text-white-60 mb-3">🎬 Movies ({{ favorite_movies|length }})</h5>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
           {% for movie in favorite_movies %}
           <div class="col">
-            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden movie-card-hover">
+            <div
+              class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden movie-card-hover">
 
               <a href="{% url 'movie_detail' movie.slug %}" class="text-decoration-none">
-                <img src="{{ movie.poster.url }}" 
-                     class="card-img-top rounded-4" 
-                     style="height: 250px; object-fit: cover; transition: transform 0.3s;"
-                     alt="{{ movie.title }}"
-                     onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
+                <img src="{{ movie.poster.url }}" class="card-img-top rounded-4"
+                  style="height: 250px; object-fit: cover; transition: transform 0.3s;" alt="{{ movie.title }}"
+                  onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
               </a>
 
-              <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm btn-danger text-white"
-                data-slug="{{ movie.slug }}" data-type="movie"
-                style="z-index: 10; width: 40px; height: 40px;" title="Remove from favorites">
+              <button
+                class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm btn-danger text-white"
+                data-slug="{{ movie.slug }}" data-type="movie" style="z-index: 10; width: 40px; height: 40px;"
+                title="Remove from favorites">
                 ♥
               </button>
 
@@ -75,25 +73,24 @@
         </div>
         {% endif %}
 
-        <!-- Series -->
         {% if favorite_series %}
-        <h5 class="text-white-60 mt-5 mb-3">📺 Series ({{ favorite_series|length }})</h5>
+        <h5 class="text-white-60 mt-5 mb-3">Series ({{ favorite_series|length }})</h5>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
           {% for series in favorite_series %}
           <div class="col">
-            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden movie-card-hover">
+            <div
+              class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden movie-card-hover">
 
               <a href="{% url 'series_detail' series.slug %}" class="text-decoration-none">
-                <img src="{{ series.poster.url }}" 
-                     class="card-img-top rounded-4" 
-                     style="height: 250px; object-fit: cover; transition: transform 0.3s;"
-                     alt="{{ series.title }}"
-                     onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
+                <img src="{{ series.poster.url }}" class="card-img-top rounded-4"
+                  style="height: 250px; object-fit: cover; transition: transform 0.3s;" alt="{{ series.title }}"
+                  onerror="this.src='https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster'">
               </a>
 
-              <button class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm btn-danger text-white"
-                data-slug="{{ series.slug }}" data-type="series"
-                style="z-index: 10; width: 40px; height: 40px;" title="Remove from favorites">
+              <button
+                class="position-absolute top-0 end-0 m-3 btn btn-sm rounded-circle add-fav shadow-sm btn-danger text-white"
+                data-slug="{{ series.slug }}" data-type="series" style="z-index: 10; width: 40px; height: 40px;"
+                title="Remove from favorites">
                 ♥
               </button>
 
@@ -123,38 +120,88 @@
         </div>
         {% endif %}
       </div>
-
-      <!-- My Reviews -->
       <div>
         <h4 class="text-white mb-4">My Reviews ({{ reviews|length }})</h4>
+
         {% if reviews %}
-        <div class="list-group list-group-flush">
+        <div class="row g-4">
           {% for r in reviews %}
-          <div class="list-group-item bg-dark border-secondary text-white rounded-3 mb-3">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <h6 class="mb-1">
-                  <a href="{% url 'movie_detail' r.movie.slug %}" class="text-danger text-decoration-none">
-                    {{ r.movie.title }}
+          <div class="col-12">
+            <div class="card bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift">
+              <div class="row g-0">
+
+                <div class="col-4 col-md-3 col-lg-2">
+                  <a href="{% url 'movie_detail' r.movie.slug %}">
+                    <img
+                      src="{% if r.movie.poster_path %}https://image.tmdb.org/t/p/w154{{ r.movie.poster_path }}{% else %}{% static 'images/default_poster.jpg' %}{% endif %}"
+                      class="img-fluid rounded-start w-100 h-100" style="object-fit: cover; min-height: 180px;"
+                      alt="{{ r.movie.title }}">
                   </a>
-                </h6>
-                <p class="mb-2 text-warning">
-                  {% for i in "12345"|make_list %}
-                  {% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}
-                  {% endfor %}
-                  <span class="text-white-50 ms-2">{{ r.rating }}/5</span>
-                </p>
-                <p class="mb-0">{{ r.comment }}</p>
+                </div>
+
+                <div class="col-8 col-md-9 col-lg-10">
+                  <div class="card-body p-4">
+
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1 me-3">
+                        <h5 class="mb-2">
+                          <a href="{% url 'movie_detail' r.movie.slug %}"
+                            class="text-danger text-decoration-none fw-bold hover-underline">
+                            {{ r.movie.title }}
+                          </a>
+                        </h5>
+
+                        <div class="text-warning mb-2">
+                          {% for i in "1234567890"|make_list %}
+                          {% if forloop.counter <= r.rating %} <i class="fa-solid fa-star"></i>
+                            {% else %}
+                            <i class="fa-regular fa-star"></i>
+                            {% endif %}
+                            {% endfor %}
+                            <span class="text-white ms-2">{{ r.rating }}/10</span>
+                        </div>
+
+                        <p class="text-white-70 mb-2 lh-lg">{{ r.comment|default:"No comment provided." }}</p>
+                        <small class="text-muted">
+                          <i class="fa-regular fa-calendar me-1"></i>{{ r.created_at|date:"M j, Y" }}
+                        </small>
+                      </div>
+
+                      <div class="d-flex flex-column gap-2">
+
+                        <a href="{% url 'movie_detail' r.movie.slug %}#editReviewForm"
+                          class="btn btn-outline-warning btn-sm rounded-pill px-3">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                          <span class="d-none d-sm-inline">Edit</span>
+                        </a>
+
+                        <form method="post" action="{% url 'api_delete_review' r.id %}" class="d-inline"
+                          onsubmit="return confirm('Delete Review?\n\nMovie: {{ r.movie.title|escapejs }}\nRating: {{ r.rating }}/10\n');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span class="d-none d-sm-inline">Delete</span>
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
-              <small class="text-muted">{{ r.created_at|date:"M j, Y" }}</small>
             </div>
           </div>
           {% endfor %}
         </div>
+
         {% else %}
-        <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
-          <h5 class="text-muted">You haven't reviewed any movies yet.</h5>
-          <p class="text-muted">Be the first to share your thoughts!</p>
+        <div class="text-center py-5">
+          <i class="fa-solid fa-comment-slash text-white-50 mb-4" style="font-size: 4rem;"></i>
+          <h5 class="text-white-50">You haven't reviewed any movies yet.</h5>
+          <p class="text-muted">Go watch something and share your opinion!</p>
+          <a href="{% url 'browse' %}" class="btn btn-outline-danger mt-3 px-5 rounded-pill">
+            Browse Content
+          </a>
         </div>
         {% endif %}
       </div>
@@ -165,125 +212,122 @@
 
 {% block extra_css %}
 <style>
-.movie-card-hover:hover img {
-  transform: scale(1.08);
-}
+  .movie-card-hover:hover img {
+    transform: scale(1.08);
+  }
 
-.movie-card-hover:hover {
-  transform: translateY(-8px);
-  transition: all 0.3s ease;
-}
+  .movie-card-hover:hover {
+    transform: translateY(-8px);
+    transition: all 0.3s ease;
+  }
 
-.bg-gradient {
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-}
+  .bg-gradient {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".add-fav").forEach(btn => {
-        btn.addEventListener("click", function (e) {
-            e.preventDefault(); 
-            e.stopPropagation();
-            
-            const slug = this.dataset.slug;
-            const type = this.dataset.type || "movie";
-            const card = this.closest(".col");
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
 
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
+        const slug = this.dataset.slug;
+        const type = this.dataset.type || "movie";
+        const card = this.closest(".col");
+
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
             }
+          }
+          return cookieValue;
+        }
 
-            fetch("{% url 'api_toggle_favorite' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({ 
-                    slug: slug,
-                    content_type: type
-                })
-            })
-            .then(r => {
-                if (!r.ok) throw new Error('Network error');
-                return r.json();
-            })
-            .then(data => {
-                if (data.success && !data.is_favorite) {
-                    // إخفاء البطاقة بتأثير
-                    card.style.transition = "all 0.5s ease";
-                    card.style.opacity = "0";
-                    card.style.transform = "scale(0.8)";
-                    
-                    setTimeout(() => {
-                        card.remove();
-                        
-                        // إعادة تحميل الصفحة لتحديث جميع العدادات
-                        const remainingCards = document.querySelectorAll(".col");
-                        if (remainingCards.length === 0) {
-                            location.reload(); // إعادة تحميل إذا لم يبقى أي عنصر
-                        } else {
-                            // تحديث العدادات يدوياً
-                            updateAllCounts();
-                        }
-                    }, 500);
+        fetch("{% url 'api_toggle_favorite' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+          },
+          body: JSON.stringify({
+            slug: slug,
+            content_type: type
+          })
+        })
+          .then(r => {
+            if (!r.ok) throw new Error('Network error');
+            return r.json();
+          })
+          .then(data => {
+            if (data.success && !data.is_favorite) {
+              card.style.transition = "all 0.5s ease";
+              card.style.opacity = "0";
+              card.style.transform = "scale(0.8)";
+
+              setTimeout(() => {
+                card.remove();
+
+                const remainingCards = document.querySelectorAll(".col");
+                if (remainingCards.length === 0) {
+                  location.reload(); 
+                } else {
+                  updateAllCounts();
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error removing from favorites');
-            });
-        });
+              }, 500);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing from favorites');
+          });
+      });
     });
 
     function updateAllCounts() {
-        const movieCards = document.querySelectorAll('[data-type="movie"]');
-        const seriesCards = document.querySelectorAll('[data-type="series"]');
-        
-        const movieCount = movieCards.length;
-        const seriesCount = seriesCards.length;
-        const totalCount = movieCount + seriesCount;
+      const movieCards = document.querySelectorAll('[data-type="movie"]');
+      const seriesCards = document.querySelectorAll('[data-type="series"]');
 
-        const mainTitle = document.querySelector("h4.text-white");
-        if (mainTitle) {
-            mainTitle.innerHTML = `My Favorites (${totalCount})`;
+      const movieCount = movieCards.length;
+      const seriesCount = seriesCards.length;
+      const totalCount = movieCount + seriesCount;
+
+      const mainTitle = document.querySelector("h4.text-white");
+      if (mainTitle) {
+        mainTitle.innerHTML = `My Favorites (${totalCount})`;
+      }
+
+      const movieSection = document.querySelector("h5.text-white-60");
+      if (movieSection && movieSection.textContent.includes('Movies')) {
+        movieSection.innerHTML = `🎬 Movies (${movieCount})`;
+        if (movieCount === 0) {
+          movieSection.style.display = 'none';
         }
+      }
 
-        const movieSection = document.querySelector("h5.text-white-60");
-        if (movieSection && movieSection.textContent.includes('Movies')) {
-            movieSection.innerHTML = `🎬 Movies (${movieCount})`;
-            if (movieCount === 0) {
-                movieSection.style.display = 'none';
-            }
+      const seriesSections = document.querySelectorAll("h5.text-white-60");
+      seriesSections.forEach(section => {
+        if (section.textContent.includes('Series')) {
+          section.innerHTML = `📺 Series (${seriesCount})`;
+          if (seriesCount === 0) {
+            section.style.display = 'none';
+          }
         }
+      });
 
-        const seriesSections = document.querySelectorAll("h5.text-white-60");
-        seriesSections.forEach(section => {
-            if (section.textContent.includes('Series')) {
-                section.innerHTML = `📺 Series (${seriesCount})`;
-                if (seriesCount === 0) {
-                    section.style.display = 'none';
-                }
-            }
-        });
-
-        if (totalCount === 0) {
-            const favoritesContainer = document.querySelector(".mb-5");
-            const noFavoritesHTML = `
+      if (totalCount === 0) {
+        const favoritesContainer = document.querySelector(".mb-5");
+        const noFavoritesHTML = `
                 <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
                     <i class="fa-regular fa-heart text-white-50 mb-3" style="font-size: 3rem;"></i>
                     <h5 class="text-muted">No favorites yet.</h5>
@@ -291,9 +335,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     <a href="{% url 'browse' %}" class="btn btn-outline-light mt-2">Browse Content</a>
                 </div>
             `;
-            favoritesContainer.innerHTML += noFavoritesHTML;
-        }
+        favoritesContainer.innerHTML += noFavoritesHTML;
+      }
     }
-});
+  });
 </script>
 {% endblock %}

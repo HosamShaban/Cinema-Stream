@@ -4,6 +4,8 @@ import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
 from django.forms import ValidationError
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class Genre(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -89,9 +91,12 @@ class UserProfile(models.Model):
 
 
 class Review(models.Model):
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reviews')
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reviews', null=True,blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 11)])
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
     comment = models.TextField()
     is_approved = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

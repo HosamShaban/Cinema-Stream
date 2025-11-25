@@ -4,8 +4,7 @@
 
 {% block content %}
 <div class="position-relative">
-    <div class="series-backdrop" 
-         style="background-image: url('https://image.tmdb.org/t/p/w1280{{ series.backdrop_path|default:series.poster_path }}');
+    <div class="series-backdrop" style="background-image: url('https://image.tmdb.org/t/p/w1280{{ series.backdrop_path|default:series.poster_path }}');
                 filter: blur(20px);
                 background-size: cover;
                 background-position: center;
@@ -15,7 +14,8 @@
                 opacity: 0.4;"></div>
 
     <div class="container py-5">
-        <a href="javascript:history.back()" class="btn btn-sm btn-outline-light mb-4 d-inline-flex align-items-center gap-2">
+        <a href="javascript:history.back()"
+            class="btn btn-sm btn-outline-light mb-4 d-inline-flex align-items-center gap-2">
             <i class="fa-solid fa-arrow-left"></i> Back
         </a>
 
@@ -23,15 +23,12 @@
             <div class="col-lg-4">
                 <div class="poster-container shadow-lg rounded-4 overflow-hidden">
                     {% if series.poster %}
-                        <img src="{{ series.poster.url }}" 
-                             class="img-fluid w-100 rounded-4"
-                             alt="{{ series.title }}"
-                             style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
+                    <img src="{{ series.poster.url }}" class="img-fluid w-100 rounded-4" alt="{{ series.title }}"
+                        style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
                     {% else %}
-                        <img src="https://image.tmdb.org/t/p/w500{{ series.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-                             class="img-fluid w-100 rounded-4"
-                             alt="{{ series.title }}"
-                             style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
+                    <img src="https://image.tmdb.org/t/p/w500{{ series.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+                        class="img-fluid w-100 rounded-4" alt="{{ series.title }}"
+                        style="height: 600px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1);">
                     {% endif %}
                 </div>
 
@@ -39,19 +36,20 @@
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <span class="text-warning fs-4">Rating</span>
                         <span class="fs-3 fw-bold">{{ series.overall_rating|floatformat:1 }}</span>
-                        <small class="text-muted">/10</small>
+                        <small class="text-muted">({{ reviews.count }} reviews)</small>
                     </div>
-                    <p class="mb-2"><strong>First Air:</strong> {{ series.first_air_date }}</p>
+                    <p class="mb-2"><strong>First Air:</strong> {{ series.first_air_date|date:"Y" }}</p>
                     <p class="mb-2"><strong>Seasons:</strong> {{ series.seasons_count }}</p>
                     <p class="mb-2"><strong>Episodes:</strong> {{ series.episodes_count }}</p>
-                    <p class="mb-3"><strong>Genres:</strong> 
+                    <p class="mb-3"><strong>Genres:</strong>
                         {% for genre in series.genres.all %}
                         <span class="badge bg-primary me-1">{{ genre.name }}</span>
                         {% endfor %}
                     </p>
 
-                    <button id="favBtn" class="btn btn-warning w-100 py-3 fs-5 fw-bold" 
-                            data-slug="{{ series.slug }}" data-type="series">
+                    <button id="favBtn"
+                        class="btn {% if is_favorite %}btn-danger{% else %}btn-warning{% endif %} w-100 py-3 fs-5 fw-bold"
+                        data-slug="{{ series.slug }}" data-type="series">
                         {% if is_favorite %}
                         <i class="fa-solid fa-heart me-2"></i> Favorited
                         {% else %}
@@ -64,46 +62,123 @@
             <div class="col-lg-8">
                 <div class="text-white">
                     <h1 class="display-4 fw-bold mb-3 text-shadow">{{ series.title }}</h1>
-                    <p class="lead fs-3 text-white-50 mb-4">TV Series</p>
+                    <p class="lead fs-3 text-primary mb-4">{{ series.tagline|default:"TV Series" }}</p>
                     <p class="fs-5 lh-lg text-white-75">{{ series.description }}</p>
-
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="bg-black bg-opacity-70 p-4 rounded-4 mb-3">
-                                <h5 class="text-danger mb-3">Series Info</h5>
-                                <p class="mb-2"><strong>Language:</strong> {{ series.language|upper }}</p>
-                                <p class="mb-2"><strong>Status:</strong> 
-                                    <span class="badge {% if series.seasons_count > 1 %}bg-success{% else %}bg-warning{% endif %}">
-                                        {% if series.seasons_count > 11 %}Ongoing{% else %}Completed{% endif %}
-                                    </span>
-                                </p>
-                                <p class="mb-0"><strong>Content Type:</strong> {{ series.content_type|title }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="bg-black bg-opacity-70 p-4 rounded-4 mb-3">
-                                <h5 class="text-primary mb-3">Watch Options</h5>
-                                {% if series.trailer_url %}
-                                <a href="{{ series.trailer_url }}" target="_blank" class="btn btn-danger btn-lg w-100 mb-3">
-                                    <i class="fa-solid fa-play me-2"></i> Watch Trailer
-                                </a>
-                                {% endif %}
-                                <button class="btn btn-outline-light btn-lg w-100">
-                                    <i class="fa-solid fa-tv me-2"></i> Watch Now
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
                     <hr class="border-secondary my-5">
 
                     <h3 class="mb-4">Cast & Crew</h3>
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <p class="text-white-75 fs-5">Cast information coming soon...</p>
-                        </div>
-                    </div>
+                    <p class="text-white-75 fs-5">{{ series.cast|default:"Coming soon..." }}</p>
 
+                    <hr class="border-secondary my-5">
+
+                    <h3 class="mb-4">Reviews <span class="text-white">({{ reviews.count }})</span></h3>
+
+                    {% if request.user.is_authenticated %}
+                        {% if user_review %}
+                        <div class="bg-black bg-opacity-80 p-4 rounded-4 border border-success mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="mb-0 text-success">Your Review</h4>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-warning btn-sm rounded-pill px-3" onclick="editReview()">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                                    </button>
+                                    <form id="deleteYourReviewForm" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="review_id" value="{{ user_review.id }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                            <i class="fa-solid fa-trash-can me-1"></i>
+                                            <span class="d-none d-sm-inline">Delete</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span class="text-warning">
+                                        {% for i in "1234567890"|make_list %}
+                                            {% if forloop.counter <= user_review.rating %}
+                                                <i class="fa-solid fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="fa-regular fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                        ({{ user_review.rating }}/10)
+                                    </span>
+                                </div>
+                                <small class="text-muted">{{ user_review.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="text-white-75 mb-0">{{ user_review.comment|default:"No comment" }}</p>
+                        </div>
+                        <div id="editReviewForm" class="bg-black bg-opacity-80 p-4 rounded-4 border border-warning mt-4" style="display: none;">
+                            <h4 class="mb-4 text-warning">Edit Your Review</h4>
+                            <form id="reviewForm">
+                                {% csrf_token %}
+                                <input type="hidden" name="review_id" value="{{ user_review.id }}">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label text-white">Rating</label>
+                                        <select name="rating" class="form-select form-select-lg bg-dark text-white border-warning" required>
+                                            <option value="">Choose...</option>
+                                            {% for i in "1234567890"|make_list %}
+                                                <option value="{{ forloop.counter }}"
+                                                    {% if forloop.counter == user_review.rating %}selected{% endif %}>
+                                                    {{ forloop.counter }}/10
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <label class="form-label text-white">Your Review</label>
+                                        <textarea name="comment" class="form-control bg-dark text-white border-warning" rows="4"
+                                            placeholder="What did you think of {{ series.title }}?" required>{{ user_review.comment }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-3 mt-4">
+                                    <button type="submit" class="btn btn-warning btn-lg px-5">
+                                        <i class="fa-solid fa-paper-plane me-2"></i> Update Review
+                                    </button>
+                                    <button type="button" class="btn btn-outline-light btn-lg px-4" onclick="cancelEdit()">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="bg-black bg-opacity-80 p-4 rounded-4 border border-primary">
+                            <h4 class="mb-4 text-primary">Write Your Review</h4>
+                            <form id="reviewForm">
+                                {% csrf_token %}
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label text-white">Rating</label>
+                                        <select name="rating" class="form-select form-select-lg bg-dark text-white border-primary" required>
+                                            <option value="">Choose...</option>
+                                            {% for i in "1234567890"|make_list %}
+                                                <option value="{{ forloop.counter }}">{{ forloop.counter }} Stars</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <label class="form-label text-white">Your Review</label>
+                                        <textarea name="comment" class="form-control bg-dark text-white border-primary" rows="4"
+                                            placeholder="What did you think of {{ series.title }}?" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="mt-4 text">
+                                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                                        <i class="fa-solid fa-paper-plane me-2"></i> Submit Review
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="alert alert-warning rounded-4 p-4">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                        Please <a href="{% url 'login' %}?next={{ request.path }}" class="alert-link fw-bold">login</a> to write a review.
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -113,65 +188,72 @@
 
 {% block extra_css %}
 <style>
-.series-backdrop {
-    transform: scale(1.1);
-}
-.text-shadow {
-    text-shadow: 3px 3px 15px rgba(0,0,0,0.9);
-}
-.poster-container:hover img {
-    transform: scale(1.05);
-    transition: all 0.4s ease;
-}
-.badge {
-    font-size: 0.8em;
-}
+    .series-backdrop { transform: scale(1.1); }
+    .text-shadow { text-shadow: 3px 3px 15px rgba(0,0,0,0.9); }
+    .poster-container:hover img { transform: scale(1.05); transition: all 0.4s ease; }
+    .fa-star { font-size: 1.1em; }
+    .btn-sm.rounded-pill { transition: all 0.3s ease; }
+    .btn-sm.rounded-pill:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const favBtn = document.getElementById('favBtn');
-    if (favBtn) {
-        favBtn.addEventListener('click', function() {
-            const slug = this.dataset.slug;
-            const type = this.dataset.type;
-            const btn = this;
-            
-            fetch("{% url 'api_toggle_favorite' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: JSON.stringify({ 
-                    slug: slug,
-                    content_type: type
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.is_favorite) {
-                        btn.innerHTML = '<i class="fa-solid fa-heart me-2"></i> Favorited';
-                        btn.classList.add('btn-danger');
-                        btn.classList.remove('btn-warning');
-                    } else {
-                        btn.innerHTML = '<i class="fa-regular fa-heart me-2"></i> Add to Favorites';
-                        btn.classList.add('btn-warning');
-                        btn.classList.remove('btn-danger');
-                    }
-                } else if (data.login_required) {
-                    window.location.href = "{% url 'login' %}?next={{ request.path }}";
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error updating favorites');
-            });
+    document.getElementById('favBtn')?.addEventListener('click', function () {
+        const slug = this.dataset.slug;
+        const type = this.dataset.type;
+        const btn = this;
+
+        fetch("{% url 'api_toggle_favorite' %}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
+            body: JSON.stringify({ slug: slug, content_type: type })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.innerHTML = data.is_favorite 
+                    ? '<i class="fa-solid fa-heart me-2"></i> Favorited'
+                    : '<i class="fa-regular fa-heart me-2"></i> Add to Favorites';
+                btn.classList.toggle('btn-danger', data.is_favorite);
+                btn.classList.toggle('btn-warning', !data.is_favorite);
+            }
         });
-    }
-});
+    });
+
+    function editReview() { document.getElementById('editReviewForm').style.display = 'block'; }
+    function cancelEdit() { document.getElementById('editReviewForm').style.display = 'none'; }
+
+    document.getElementById('reviewForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('slug', '{{ series.slug }}');
+        formData.append('content_type', 'series');
+
+        fetch("{% url 'api_post_review' %}", {
+            method: "POST",
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) location.reload(); else alert(data.error || 'Error'); });
+    });
+
+    document.querySelectorAll('#deleteYourReviewForm, .delete-review-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!confirm('Delete your review for:\n\n"{{ series.title|escapejs }}"\nYour rating: {{ user_review.rating }}/10\n\n⚠️ This action cannot be undone!')) return;
+
+            const reviewId = this.querySelector('[name="review_id"]').value;
+
+            fetch(`/api/review/${reviewId}/delete/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: new FormData(this)
+            })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); else alert('فشل الحذف'); });
+        });
+    });
 </script>
 {% endblock %}

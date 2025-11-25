@@ -63,75 +63,75 @@
         {% endif %}
       </h2>
 
-      <div id="results" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-        {% for item in content %}
+     <div id="results" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for item in content %}
+        {% if item.slug %}
         <div class="col">
-          <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden">
+            <div class="card bg-dark text-white rounded-4 shadow-lg h-100 position-relative overflow-hidden">
 
-            <img src="https://image.tmdb.org/t/p/w500{{ item.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
-              class="card-img-top" style="height: 380px; object-fit: cover;">
+                <img src="https://image.tmdb.org/t/p/w500{{ item.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
+                    class="card-img-top" style="height: 380px; object-fit: cover;">
 
-            <span class="position-absolute top-0 start-0 m-3 badge
-              {% if item.content_type == 'movie' %}bg-danger{% else %}bg-primary{% endif %}">
-              {{ item.content_type|title }}
-            </span>
-
-            <button class="position-absolute top-0 end-0 m-3 btn btn-outline-light btn-sm rounded-circle add-fav"
-              data-slug="{{ item.slug }}" data-type="{{ item.content_type }}">
-              {% if item.slug in user_favorites %}♥{% else %}♡{% endif %}
-            </button>
-
-            <div class="card-body d-flex flex-column">
-              <h6 class="card-title fw-bold text-white mb-2 text-truncate">{{ item.title }}</h6>
-
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="text-warning">
-                  {% with ''|center:item.overall_rating as range %}
-                  {% for i in range %}<i class="fa-solid fa-star"></i>{% endfor %}
-                  {% endwith %}
+                <span class="position-absolute top-0 start-0 m-3 badge
+                    {% if item.content_type == 'movie' %}bg-danger{% else %}bg-primary{% endif %}">
+                    {{ item.content_type|title }}
                 </span>
-                <span class="text-white fw-bold">{{ item.overall_rating|floatformat:1 }}</span>
-              </div>
 
-              <p class="text-white-50 small mb-2">
-                {% if item.content_type == 'movie' %}
-                {{ item.release_year }}{% if item.duration %} • {{ item.duration }} min{% endif %}
-                {% else %}
-                {{ item.first_air_date }}{% if item.seasons_count %} • {{ item.seasons_count }} season{{ item.seasons_count|pluralize }}{% endif %}
-                {% endif %}
-              </p>
+                <button class="position-absolute top-0 end-0 m-3 btn btn-outline-light btn-sm rounded-circle add-fav"
+                    data-slug="{{ item.slug }}" data-type="{{ item.content_type }}">
+                    {% if item.slug in user_favorites %}♥{% else %}♡{% endif %}
+                </button>
 
-              <div class="mt-auto d-flex flex-wrap gap-1">
-                {% for genre in item.genres.all|slice:":2" %}
-                <span class="badge {% if item.content_type == 'movie' %}bg-danger{% else %}bg-primary{% endif %} small">
-                  {{ genre.name }}
-                </span>
-                {% endfor %}
-              </div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title fw-bold text-white mb-2 text-truncate">{{ item.title }}</h6>
 
-              <div class="mt-3">
-                <a href="{% if item.content_type == 'series' %}
-                          {% url 'series_detail' item.slug %}
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="text-warning">
+                            {% with ''|center:item.overall_rating as range %}
+                            {% for i in range %}<i class="fa-solid fa-star"></i>{% endfor %}
+                            {% endwith %}
+                        </span>
+                        <span class="text-white fw-bold">{{ item.overall_rating|floatformat:1 }}</span>
+                    </div>
+
+                    <p class="text-white-50 small mb-2">
+                        {% if item.content_type == 'movie' %}
+                        {{ item.release_year }}{% if item.duration %} • {{ item.duration }} min{% endif %}
                         {% else %}
-                          {% url 'movie_detail' item.slug %}
-                        {% endif %}"
-                  class="btn btn-danger btn-sm w-100">
-                  <i class="fa-solid fa-circle-info me-2"></i>More Details
-                </a>
-              </div>
+                        {{ item.first_air_date }}{% if item.seasons_count %} • {{ item.seasons_count }} season{{ item.seasons_count|pluralize }}{% endif %}
+                        {% endif %}
+                    </p>
 
+                    <div class="mt-auto d-flex flex-wrap gap-1">
+                        {% for genre in item.genres.all|slice:":2" %}
+                        <span class="badge {% if item.content_type == 'movie' %}bg-danger{% else %}bg-primary{% endif %} small">
+                            {{ genre.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-3">
+                        <a href="{% if item.content_type == 'series' %}
+                                    {% url 'series_detail' item.slug %}
+                                {% else %}
+                                    {% url 'movie_detail' item.slug %}
+                                {% endif %}"
+                            class="btn btn-danger btn-sm w-100">
+                            <i class="fa-solid fa-circle-info me-2"></i>More Details
+                        </a>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-        {% empty %}
+        {% endif %} 
+    {% empty %}
         <div class="col-12 text-center py-5">
-          <i class="fa-solid fa-film text-white-50 mb-3" style="font-size: 3rem;"></i>
-          <h4 class="text-white">No content found</h4>
-          <p class="text-white-50">Try changing your filters</p>
+            <i class="fa-solid fa-film text-white-50 mb-3" style="font-size: 3rem;"></i>
+            <h4 class="text-white">No content found</h4>
+            <p class="text-white-50">Try changing your filters</p>
         </div>
-        {% endfor %}
-      </div>
-
+    {% endfor %}
+</div>
       {% if content.has_next %}
       <div class="text-center mt-5">
         <a id="loadMore"
@@ -227,70 +227,55 @@
   });
 });
 
-    $(document).on('click', '#loadMore', function () {
+$(document).on('click', '#loadMore', function () {
     const btn = $(this);
-    let currentPage = parseInt(btn.data('current-page')) || 1;
+    const currentPage = parseInt(btn.data('current-page')) || 1;
     const totalPages = parseInt(btn.data('total-pages')) || 1;
     const nextPage = currentPage + 1;
 
     if (nextPage > totalPages) {
-      btn.remove();
-      return;
+        btn.remove();
+        return;
     }
 
     btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Loading...');
 
-    const params = new URLSearchParams(window.location.search);
-    params.set('page', nextPage);
-    const url = '?' + params.toString();
-
-    fetch(url, {
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(r => {
-      if (!r.ok) throw new Error('Network response was not ok');
-      return r.text();
-    })
-    .then(html => {
-      const temp = document.createElement('div');
-      temp.innerHTML = html.trim();
-
-      let newContent = null;
-      const resultsElem = temp.querySelector('#results');
-      if (resultsElem) {
-        newContent = resultsElem.innerHTML;
-      } else {
-        const row = temp.querySelector('.row.row-cols-1');
-        if (row) {
-          newContent = row.innerHTML;
-        } else {
-          newContent = temp.innerHTML;
+    $.ajax({
+        url: window.location.pathname,
+        type: 'GET',
+        data: {
+            ...Object.fromEntries(new URLSearchParams(window.location.search)),
+            page: nextPage
+        },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(response) {
+            const temp = $('<div>').html(response);
+            const newContent = temp.find('#results .col');
+            
+            if (newContent.length > 0) {
+                $('#results').append(newContent);
+                
+                btn.data('current-page', nextPage);
+                btn.attr('data-current-page', nextPage);
+                
+                if (nextPage >= totalPages) {
+                    btn.remove();
+                } else {
+                    btn.prop('disabled', false).html('Load More');
+                }
+                
+                initializeFavoriteButtons();
+            } else {
+                btn.prop('disabled', false).html('No more content');
+                setTimeout(() => btn.remove(), 3000);
+            }
+        },
+        error: function() {
+            btn.prop('disabled', false).html('Error - Try Again');
         }
-      }
-
-      document.querySelector('#results').insertAdjacentHTML('beforeend', newContent);
-      const resultsContainer = document.querySelector('#results');
-      if (!resultsContainer) {
-        console.error('Could not find #results container on page. Aborting append.');
-        return;
-      }
-
-      resultsContainer.insertAdjacentHTML('beforeend', newContent);
-
-      currentPage = nextPage;
-      btn.data('current-page', currentPage);
-      btn.attr('data-current-page', currentPage);
-
-      if (currentPage >= totalPages) {
-        btn.remove();
-      } else {
-        btn.prop('disabled', false).html('Load More');
-      }
-    })
-    .catch(err => {
-      console.error('Load more error:', err);
-      btn.prop('disabled', false).html('Load More (try again)');
     });
-  });
+})
 </script>
 {% endblock %}
