@@ -184,19 +184,23 @@ def movie_detail(request, slug):
 
 def series_detail(request, slug):
     series = get_object_or_404(models.Series, slug=slug)
-    reviews = models.Review.objects.filter(movie=None)
-    user_review = reviews.filter(user=request.user).first()
     
+    reviews = models.Review.objects.filter(series=series)
+    
+    user_review = None
+    if request.user.is_authenticated:
+        user_review = reviews.filter(user=request.user).first()
+
     is_fav = False
     if request.user.is_authenticated:
         is_fav = models.Favorite.objects.filter(user=request.user, series=series).exists()
 
     context = {
-    'series': series,
-    'reviews': reviews,
-    'user_review': user_review,
-    'is_favorite': request.user.is_authenticated and request.user.favorites.filter(series=series).exists(),
-}
+        'series': series,
+        'reviews': reviews,
+        'user_review': user_review,
+        'is_favorite': is_fav,
+    }
     return render(request, 'series_detail.html', context)
 
 
@@ -252,32 +256,20 @@ def profile(request):
         messages.error(request, "Please login first.")
         return redirect('login')
 
-    print(f"PROFILE DEBUG - User: {user.username}")
-
     favorites = models.Favorite.objects.filter(user=user).select_related('movie', 'series')
-    print(f"Total favorites in DB: {favorites.count()}")
-
+    
     favorite_movies = []
     favorite_series = []
     
     for fav in favorites:
-        print(f"Processing favorite: {fav}")
         if fav.movie:
-            print(f"Movie found: {fav.movie.title} (Slug: {fav.movie.slug})")
             favorite_movies.append(fav.movie)
         elif fav.series:
-            print(f" Series found: {fav.series.title} (Slug: {fav.series.slug})")
             favorite_series.append(fav.series)
-        else:
-            print(" Invalid favorite")
 
-    print(f"Final movies list: {[m.title for m in favorite_movies]}")
-    print(f"Final series list: {[s.title for s in favorite_series]}")
-
-    
     reviews = []
-    movie_reviews = models.Review.objects.filter(user=user).select_related('movie')
     
+    movie_reviews = models.Review.objects.filter(user=user, movie__isnull=False).select_related('movie')
     for review in movie_reviews:
         if review.movie:
             reviews.append({
@@ -291,6 +283,22 @@ def profile(request):
                     "https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster"
                 ),
                 'year': review.movie.release_year
+            })
+
+    series_reviews = models.Review.objects.filter(user=user, series__isnull=False).select_related('series')
+    for review in series_reviews:
+        if review.series:
+            reviews.append({
+                'review': review,
+                'type': 'series',
+                'content': review.series,
+                'title': review.series.title,
+                'slug': review.series.slug,
+                'poster_url': review.series.poster.url if review.series.poster else (
+                    f"https://image.tmdb.org/t/p/w300{review.series.poster_path}" if review.series.poster_path else 
+                    "https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster"
+                ),
+                'year': review.series.first_air_date
             })
 
     context = {
@@ -400,32 +408,37 @@ def add_review(request, slug):
             messages.error(request, "Please provide both rating and comment.")
     return redirect('movie_detail', slug=slug)
 
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-
 @login_required
 def api_delete_review(request, review_id):
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
-    review = get_object_or_404(models.Review, id=review_id, user=request.user)
-    
     try:
-        # إذا كان فيلم، نعدّل الريتنج بعده
-        movie = review.movie if hasattr(review, 'movie') and review.movie else None
-        series = review.series if hasattr(review, 'series') and review.series else None
+        print(f"Deleting review {review_id} for user {request.user}")
+        
+        review = get_object_or_404(models.Review, id=review_id, user=request.user)
+        
+        movie = review.movie
+        series = review.series
         
         review.delete()
+        print("Review deleted successfully")
 
         if movie:
             models.update_movie_rating(movie)
-        # إذا عندك دالة للسيريس كمان أضيفيها هنا
+            print("Movie rating updated")
 
-        return JsonResponse({'success': True, 'message': 'Review deleted successfully'})
-    
+        return JsonResponse({
+            'success': True, 
+            'message': 'Review deleted successfully'
+        })
+
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        print(f"Error deleting review: {e}")
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=500)
 
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
@@ -486,40 +499,40 @@ def api_post_review(request):
 
         if content_type_str == 'series':
             content = models.Series.objects.get(slug=slug)
-            movie_obj = None
-            print(f"Found Series: {content.title}")
+            review, created = models.Review.objects.update_or_create(
+                user=request.user,
+                series=content,
+                defaults={'rating': rating, 'comment': comment}
+            )
+            print(f"Series Review {'created' if created else 'updated'} → ID: {review.id}")
         else:
             content = models.Movie.objects.get(slug=slug)
-            movie_obj = content
-            print(f"Found Movie: {content.title}")
-
-        review, created = models.Review.objects.update_or_create(
-            user=request.user,
-            movie=movie_obj,
-            defaults={'rating': rating, 'comment': comment}
-        )
-
-        print(f"Review {'created' if created else 'updated'} → ID: {review.id}")
+            review, created = models.Review.objects.update_or_create(
+                user=request.user,
+                movie=content,
+                defaults={'rating': rating, 'comment': comment}
+            )
+            print(f"Movie Review {'created' if created else 'updated'} → ID: {review.id}")
 
         return JsonResponse({
             'success': True,
-            'message': 'تم بنجاح!',
+            'message': 'Review submitted successfully!',
             'rating': review.rating,
             'comment': review.comment,
         })
 
     except models.Series.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'المسلسل غير موجود'})
+        return JsonResponse({'success': False, 'error': 'Series not found'})
     except models.Movie.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'الفيلم غير موجود'})
+        return JsonResponse({'success': False, 'error': 'Movie not found'})
     except ValueError:
-        return JsonResponse({'success': False, 'error': 'التقييم لازم يكون رقم'})
+        return JsonResponse({'success': False, 'error': 'Rating must be a number'})
     except Exception as e:
-        print("خطأ كبير في api_post_review:", e)
-        print("نوع الخطأ:", type(e).__name__)
+        print("Error in api_post_review:", e)
         import traceback
         traceback.print_exc()
-        return JsonResponse({'success': False, 'error': 'خطأ داخلي، جربي تاني'}, status=500)
+        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500)
+    
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):

@@ -32,7 +32,7 @@
       </div>
     </div>
     <div class="col-lg-8">
-      <div class="mb-5">
+      <div class="mb-5" data-section="favorites">
         <h4 class="text-white mb-4">My Favorites ({{ favorites_count }})</h4>
 
         {% if favorite_movies %}
@@ -120,9 +120,8 @@
         </div>
         {% endif %}
       </div>
-      <div>
-        <!-- My Reviews Section -->
-        <!-- My Reviews Section -->
+
+      <div data-section="reviews">
         <h4 class="text-white mb-4">My Reviews ({{ reviews|length }})</h4>
 
         {% if reviews %}
@@ -132,7 +131,6 @@
             <div class="card bg-dark border-0 rounded-4 overflow-hidden shadow-lg hover-lift">
               <div class="row g-0">
 
-                <!-- الصورة -->
                 <div class="col-4 col-md-3 col-lg-2">
                   <a
                     href="{% if item.type == 'movie' %}{% url 'movie_detail' item.slug %}{% else %}{% url 'series_detail' item.slug %}{% endif %}">
@@ -142,12 +140,10 @@
                   </a>
                 </div>
 
-                <!-- المحتوى -->
                 <div class="col-8 col-md-9 col-lg-10">
                   <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start">
                       <div class="flex-grow-1 me-3">
-                        <!-- العنوان -->
                         <h5 class="mb-2">
                           <a href="{% if item.type == 'movie' %}{% url 'movie_detail' item.slug %}{% else %}{% url 'series_detail' item.slug %}{% endif %}"
                             class="{% if item.type == 'movie' %}text-danger{% else %}text-primary{% endif %} text-decoration-none fw-bold">
@@ -158,7 +154,6 @@
                           {{ item.year }} • {{ item.type|title }}
                         </p>
 
-                        <!-- التقييم -->
                         <div class="text-warning mb-3">
                           {% for i in "1234567890"|make_list %}
                           {% if forloop.counter <= item.review.rating %} <i class="fa-solid fa-star"></i>
@@ -169,32 +164,25 @@
                             <span class="text-white ms-2 fw-bold">{{ item.review.rating }}/10</span>
                         </div>
 
-                        <!-- التعليق -->
                         <p class="text-white-70 mb-3 lh-base">{{ item.review.comment|default:"No comment
                           provided."|truncatewords:30 }}</p>
 
-                        <!-- التاريخ -->
                         <small class="text-muted">
                           <i class="fa-regular fa-calendar me-1"></i> {{ item.review.created_at|date:"M j, Y" }}
                         </small>
                       </div>
 
-                      <!-- الأزرار -->
                       <div class="d-flex flex-column gap-2">
                         <a href="{% if item.type == 'movie' %}{% url 'movie_detail' item.slug %}{% else %}{% url 'series_detail' item.slug %}{% endif %}"
                           class="btn btn-outline-warning btn-sm rounded-pill px-3">
                           <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                         </a>
 
-                        <form class="d-inline">
-                          {% csrf_token %}
-                          <input type="hidden" name="review_id" value="{{ r.id }}">
-                          <button type="button"
-                            class="delete-review-btn btn btn-outline-danger btn-sm rounded-pill px-3"
-                            data-review-id="{{ item.review.id }}">
-                            <i class="fa-solid fa-trash-can me-1"></i> Delete
-                          </button>
-                        </form>
+                        <button type="button"
+                          class="delete-review-btn btn btn-outline-danger btn-sm rounded-pill px-2"
+                          data-review-id="{{ item.review.id }}">
+                          <i class="fa-solid fa-trash-can me-1"></i> Delete
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -237,126 +225,202 @@
 
 {% block scripts %}
 <script>
-  // كل الـ JavaScript هنا (Favorites + Delete Review) شغال 100%
-  document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-    // ================== Favorites Remove (شغال أصلاً) ==================
     document.querySelectorAll(".add-fav").forEach(btn => {
-      btn.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
 
-        const slug = this.dataset.slug;
-        const type = this.dataset.type || "movie";
-        const card = this.closest(".col");
+            const slug = this.dataset.slug;
+            const type = this.dataset.type || "movie";
+            const card = this.closest(".col");
 
-        fetch("{% url 'api_toggle_favorite' %}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
-          },
-          body: JSON.stringify({ slug: slug, content_type: type })
-        })
-          .then(r => r.json())
-          .then(data => {
-            if (data.success && !data.is_favorite) {
-              card.style.transition = "all 0.5s ease";
-              card.style.opacity = "0";
-              card.style.transform = "scale(0.8)";
-              setTimeout(() => card.remove(), 500);
-
-              // تحديث العدد
-              const countEl = document.querySelector("h4.text-white");
-              const current = parseInt(countEl.textContent.match(/\d+/)?.[0] || 0);
-              countEl.innerHTML = `My Favorites (${current - 1})`;
-
-              if (document.querySelectorAll(".col").length === 1) { // آخر واحد
-                setTimeout(() => location.reload(), 600);
-              }
-            }
-          })
-          .catch(() => alert("Failed to remove from favorites"));
-      });
-    });
-
-    // ================== Delete Review via AJAX (اللي كان بيطلع Failed to connect) ==================
-       document.querySelectorAll('.delete-review-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const card = this.closest('.col-12'); // Use the correct card selector
-            const reviewId = this.getAttribute('data-review-id');
-
-            if (!reviewId) {
-                alert("Error: Review ID not found");
-                return;
+            function getCSRFToken() {
+                const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfInput) return csrfInput.value;
+                return '';
             }
 
-            if (!confirm("Are you sure you want to delete this review?\nThis action cannot be undone.")) {
-                return;
-            }
+            const csrfToken = getCSRFToken();
 
-            // Add loading state
-            const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Deleting...';
-            this.disabled = true;
+            this.innerHTML = '♡';
+            this.style.opacity = '0.5';
 
-            fetch(`/api/review/${reviewId}/delete/`, {
-                method: 'POST',
+            fetch("{% url 'api_toggle_favorite' %}", {
+                method: "POST",
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify({ 
+                    slug: slug, 
+                    content_type: type 
+                })
             })
             .then(response => {
+                if (response.status === 403) {
+                    throw new Error('CSRF verification failed');
+                }
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error('Server error: ' + response.status);
                 }
                 return response.json();
             })
             .then(data => {
                 if (data.success) {
-                    // Smooth animation
-                    card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateX(-100px) scale(0.8)';
-
-                    setTimeout(() => {
-                        card.remove();
-
-                        // Update review count
-                        const countEl = document.querySelector('h4.text-white');
-                        const currentCount = parseInt(countEl.textContent.match(/\d+/)?.[0] || 0);
-                        countEl.innerHTML = `My Reviews (${currentCount - 1})`;
-
-                        // If no reviews left
-                        if (document.querySelectorAll('.col-12').length === 0) {
-                            document.querySelector('.row.g-4').innerHTML = `
-                                <div class="text-center py-5">
-                                    <i class="fa-solid fa-comment-slash text-white-50 mb-4" style="font-size: 4rem;"></i>
-                                    <h5 class="text-white-50">You haven't reviewed anything yet.</h5>
-                                    <p class="text-muted">Go watch something and share your opinion!</p>
-                                    <a href="{% url 'browse' %}" class="btn btn-outline-danger mt-3 px-5 rounded-pill">Browse Content</a>
-                                </div>
-                            `;
-                        }
-                    }, 600);
+                    if (!data.is_favorite) {
+                        card.style.transition = "all 0.5s ease";
+                        card.style.opacity = "0";
+                        card.style.transform = "scale(0.8) translateY(-20px)";
+                        
+                        setTimeout(() => {
+                            card.remove();
+                            updateFavoritesCount();
+                        }, 500);
+                    }
+                } else if (data.login_required) {
+                    window.location.href = "{% url 'login' %}?next={{ request.path }}";
                 } else {
-                    alert("Error: " + (data.error || "Could not delete review"));
-                    // Reset button
-                    this.innerHTML = originalText;
-                    this.disabled = false;
+                    alert("Error: " + (data.error || "Operation failed"));
+                    this.innerHTML = '♥';
+                    this.style.opacity = '1';
                 }
             })
-            .catch(err => {
-                console.error('Delete error:', err);
-                alert("Failed to connect to server. Please try again.");
-                // Reset button
-                this.innerHTML = originalText;
-                this.disabled = false;
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Network error: " + error.message);
+                this.innerHTML = '♥';
+                this.style.opacity = '1';
             });
         });
     });
 
+    function updateFavoritesCount() {
+        const favoritesSection = document.querySelector('[data-section="favorites"]');
+        if (!favoritesSection) return;
+
+        const movieCards = favoritesSection.querySelectorAll('[data-type="movie"]');
+        const seriesCards = favoritesSection.querySelectorAll('[data-type="series"]');
+        const totalFavorites = movieCards.length + seriesCards.length;
+
+        const favoritesH4 = favoritesSection.querySelector('h4.text-white');
+        if (favoritesH4) {
+            favoritesH4.textContent = `My Favorites (${totalFavorites})`;
+        }
+
+        const movieSection = favoritesSection.querySelector("h5.text-white-60");
+        if (movieSection && movieSection.textContent.includes('Movies')) {
+            const movieCount = movieCards.length;
+            movieSection.textContent = `Movies (${movieCount})`;
+            movieSection.style.display = movieCount > 0 ? 'block' : 'none';
+        }
+
+        const seriesSections = favoritesSection.querySelectorAll("h5.text-white-60");
+        seriesSections.forEach(section => {
+            if (section.textContent.includes('Series')) {
+                const seriesCount = seriesCards.length;
+                section.textContent = `Series (${seriesCount})`;
+                section.style.display = seriesCount > 0 ? 'block' : 'none';
+            }
+        });
+
+        if (totalFavorites === 0) {
+            favoritesSection.innerHTML = `
+                <h4 class="text-white mb-4">My Favorites (0)</h4>
+                <div class="bg-dark bg-opacity-50 rounded-4 p-5 text-center">
+                    <i class="fa-regular fa-heart text-white-50 mb-3" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted">No favorites yet.</h5>
+                    <p class="text-muted">Start adding movies and series you love!</p>
+                    <a href="{% url 'browse' %}" class="btn btn-outline-light mt-2">Browse Content</a>
+                </div>
+            `;
+        }
+    }
+
+document.querySelectorAll('.delete-review-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const card = this.closest('.col-12');
+        const reviewId = this.getAttribute('data-review-id');
+
+        if (!confirm("Delete this review?")) return;
+
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        this.disabled = true;
+
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/api/review/${reviewId}/delete/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.8)';
+                card.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    card.remove();
+                    updateReviewsCount();
+                }, 500);
+            } else {
+                alert('Failed: ' + (data.error || 'Unknown error'));
+                this.innerHTML = originalHtml;
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error');
+            this.innerHTML = originalHtml;
+            this.disabled = false; 
+        });
+    });
+});
+
+function updateReviewsCount() {
+    console.log('Updating reviews count...');
+    
+    const reviewsSection = document.querySelector('[data-section="reviews"]');
+    if (!reviewsSection) {
+        console.error('Reviews section not found');
+        return;
+    }
+
+    const remainingReviews = reviewsSection.querySelectorAll('.col-12').length;
+    console.log('Remaining reviews:', remainingReviews);
+    
+    const reviewsH4 = reviewsSection.querySelector('h4.text-white');
+    if (reviewsH4) {
+        reviewsH4.textContent = `My Reviews (${remainingReviews})`;
+        console.log('Updated reviews count to:', remainingReviews);
+    } else {
+        console.error('Reviews H4 not found');
+    }
+
+    if (remainingReviews === 0) {
+        const reviewsContainer = reviewsSection.querySelector('.row.g-4');
+        if (reviewsContainer) {
+            reviewsContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-comment-slash text-white-50 mb-4" style="font-size: 4rem;"></i>
+                    <h5 class="text-white-50">You haven't reviewed anything yet.</h5>
+                    <p class="text-muted">Go watch something and share your opinion!</p>
+                    <a href="{% url 'browse' %}" class="btn btn-outline-danger mt-3 px-5 rounded-pill">Browse Content</a>
+                </div>
+            `;
+            console.log('Showed empty state');
+        }
+    }
+}
 });
 </script>
 {% endblock %}

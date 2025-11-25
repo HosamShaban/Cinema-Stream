@@ -92,6 +92,7 @@ class UserProfile(models.Model):
 
 class Review(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reviews', null=True,blank=True)
+    series = models.ForeignKey(Series, on_delete=models.CASCADE, related_name='reviews', null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 11)])
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
@@ -103,7 +104,7 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('movie', 'user')
+        unique_together = [('movie', 'user'), ('series', 'user')]
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
