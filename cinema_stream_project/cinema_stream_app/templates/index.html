@@ -210,7 +210,164 @@
 
 {% block scripts %}
 
-
+<script>
+$(document).ready(function() {
+    let searchTimeout;
+    const searchInput = $('#searchInput');
+    const searchSuggestions = $('#searchSuggestions');
+    
+    searchInput.on('input', function() {
+        const query = $(this).val().trim();
+        
+        clearTimeout(searchTimeout);
+        
+        if (query === '') {
+            hideSuggestions();
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            showSearchSuggestions(query);
+        }, 300);
+    });
+    
+    searchInput.on('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimeout);
+            hideSuggestions();
+            performSearch($(this).val().trim());
+        }
+    });
+    
+    searchInput.on('blur', function() {
+        setTimeout(hideSuggestions, 200);
+    });
+    
+    searchInput.on('focus', function() {
+        const query = $(this).val().trim();
+        if (query.length > 0) {
+            showSearchSuggestions(query);
+        }
+    });
+    
+    function showSearchSuggestions(query) {
+        if (query.length < 1) {
+            hideSuggestions();
+            return;
+        }
+        
+        searchSuggestions.html(`
+            <div class="dropdown-item">
+                <i class="fa-solid fa-spinner fa-spin me-2"></i>
+                Searching...
+            </div>
+        `).show();
+        
+        $.ajax({
+            url: '{% url "api_search_suggestions" %}',
+            type: 'GET',
+            data: { q: query, limit: 8 },
+            success: function(data) {
+                displaySuggestions(data, query);
+            },
+            error: function() {
+                searchSuggestions.html(`
+                    <div class="dropdown-item no-results">
+                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
+                        Failed to load suggestions
+                    </div>
+                ).show();
+            }
+        });
+    }
+    
+    function displaySuggestions(data, query) {
+        if (!data || data.length === 0) {
+            searchSuggestions.html(`
+                <div class="dropdown-item no-results">
+                    <i class="fa-solid fa-search me-2"></i>
+                    No results found for "${query}"
+                </div>
+            `).show();
+            return;
+        }
+        
+        let suggestionsHTML = '';
+        
+        data.forEach(item => {
+            const typeClass = item.content_type === 'movie' ? 'movie-type' : 'series-type';
+            const typeIcon = item.content_type === 'movie' ? 'fa-film' : 'fa-tv';
+            const posterUrl = item.poster_path ? 
+                `https://image.tmdb.org/t/p/w92${item.poster_path}` : 
+                '{% static "images/default_poster.jpg" %}';
+            
+            suggestionsHTML += `
+                <a class="dropdown-item suggestion-item" 
+                   href="{% url 'movie_detail' 'PLACEHOLDER' %}".replace('PLACEHOLDER', item.slug)
+                   data-slug="${item.slug}" 
+                   data-type="${item.content_type}">
+                    <img src="${posterUrl}" class="item-poster" alt="${item.title}" 
+                         onerror="this.src='https://via.placeholder.com/40x60/333/fff?text=No+Image'">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-truncate me-2">${item.title}</span>
+                            <span class="item-type ${typeClass}">
+                                <i class="fa-solid ${typeIcon} me-1"></i>
+                                ${item.content_type}
+                            </span>
+                        </div>
+                        <small class="text-white-50">
+                            ${item.release_year || item.first_air_date} • 
+                            ${item.overall_rating ? '⭐ ' + item.overall_rating : 'No rating'}
+                        </small>
+                    </div>
+                </a>
+            `;
+        });
+        
+        suggestionsHTML += `
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-center text-warning fw-bold" 
+               href="{% url 'browse' %}?q=${encodeURIComponent(query)}">
+                <i class="fa-solid fa-list me-2"></i>
+                View all results for "${query}"
+            </a>
+        `;
+        
+        searchSuggestions.html(suggestionsHTML).show();
+        
+        $('.suggestion-item').on('click', function(e) {
+            e.preventDefault();
+            const slug = $(this).data('slug');
+            const type = $(this).data('type');
+            const url = type === 'series' ? 
+                "{% url 'series_detail' 'SLUG' %}".replace('SLUG', slug) :
+                "{% url 'movie_detail' 'SLUG' %}".replace('SLUG', slug);
+            window.location.href = url;
+        });
+    }
+    
+    function hideSuggestions() {
+        searchSuggestions.hide();
+    }
+    
+    function performSearch(query) {
+        if (query.length < 1) return;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('q', query);
+        
+        window.location.href = '{% url "browse" %}?' + urlParams.toString();
+    }
+    
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.search-form').length) {
+            hideSuggestions();
+        }
+    });
+});
+</script>
 {% endblock %}
 </body>
 </html>

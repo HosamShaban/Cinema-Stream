@@ -374,6 +374,50 @@ def add_review(request, slug):
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
 
+
+def api_search_suggestions(request):
+    query = request.GET.get('q', '').strip()
+    limit = int(request.GET.get('limit', 5))
+    
+    if len(query) < 1:
+        return JsonResponse([])
+    
+    movies = models.Movie.objects.filter(
+        Q(title__icontains=query) | Q(description__icontains=query)
+    )[:limit]
+    
+    series = models.Series.objects.filter(
+        Q(title__icontains=query) | Q(description__icontains=query)
+    )[:limit]
+    
+    suggestions = []
+    
+    for movie in movies:
+        suggestions.append({
+            'id': movie.id,
+            'title': movie.title,
+            'slug': movie.slug,
+            'content_type': 'movie',
+            'poster_path': movie.poster_path,
+            'release_year': movie.release_year,
+            'overall_rating': float(movie.overall_rating) if movie.overall_rating else None
+        })
+    
+    for series in series:
+        suggestions.append({
+            'id': series.id,
+            'title': series.title,
+            'slug': series.slug,
+            'content_type': 'series',
+            'poster_path': series.poster_path,
+            'first_air_date': series.first_air_date,
+            'overall_rating': float(series.overall_rating) if series.overall_rating else None
+        })
+    
+    suggestions.sort(key=lambda x: x['overall_rating'] or 0, reverse=True)
+    
+    return JsonResponse(suggestions[:limit], safe=False)
+
 @csrf_exempt
 def api_post_review(request):
     if request.method == 'POST':
@@ -473,3 +517,5 @@ class ToggleFavoriteView(View):
             import traceback
             print(f"TRACEBACK: {traceback.format_exc()}")
             return JsonResponse({'success': False, 'error': 'Server error'}, status=500)
+        
+
