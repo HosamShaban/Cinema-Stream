@@ -274,13 +274,32 @@ def profile(request):
     print(f"Final movies list: {[m.title for m in favorite_movies]}")
     print(f"Final series list: {[s.title for s in favorite_series]}")
 
+    
+    reviews = []
+    movie_reviews = models.Review.objects.filter(user=user).select_related('movie')
+    
+    for review in movie_reviews:
+        if review.movie:
+            reviews.append({
+                'review': review,
+                'type': 'movie',
+                'content': review.movie,
+                'title': review.movie.title,
+                'slug': review.movie.slug,
+                'poster_url': review.movie.poster.url if review.movie.poster else (
+                    f"https://image.tmdb.org/t/p/w300{review.movie.poster_path}" if review.movie.poster_path else 
+                    "https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster"
+                ),
+                'year': review.movie.release_year
+            })
+
     context = {
         'user': user,
         'profile': user.profile,
         'favorite_movies': favorite_movies,
         'favorite_series': favorite_series,
         'favorites_count': len(favorite_movies) + len(favorite_series),
-        'reviews': models.Review.objects.filter(user=user),
+        'reviews': reviews,
         'page_title': 'My Profile'
     }
 
@@ -381,26 +400,32 @@ def add_review(request, slug):
             messages.error(request, "Please provide both rating and comment.")
     return redirect('movie_detail', slug=slug)
 
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+
 @login_required
 def api_delete_review(request, review_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+    review = get_object_or_404(models.Review, id=review_id, user=request.user)
+    
     try:
-        review = get_object_or_404(models.Review, id=review_id, user=request.user)
+        # إذا كان فيلم، نعدّل الريتنج بعده
+        movie = review.movie if hasattr(review, 'movie') and review.movie else None
+        series = review.series if hasattr(review, 'series') and review.series else None
+        
+        review.delete()
 
-        if review.movie:
-            movie = review.movie
-            review.delete()
+        if movie:
             models.update_movie_rating(movie)
-            
-        else:
-            review.delete()
+        # إذا عندك دالة للسيريس كمان أضيفيها هنا
 
-        return JsonResponse({'success': True, 'message': 'تم حذف التقييم بنجاح!'})
-
-    except models.Review.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'التقييم غير موجود'}, status=404)
+        return JsonResponse({'success': True, 'message': 'Review deleted successfully'})
+    
     except Exception as e:
-        print("خطأ في الحذف:", e)
-        return JsonResponse({'success': False, 'error': 'حدث خطأ'}, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
