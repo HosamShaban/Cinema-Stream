@@ -21,7 +21,7 @@
 
         <div class="row g-5">
             <div class="col-lg-4">
-                <div class="poster-container shadow-lg rounded-4 overflow-hidden">
+                <div class="poster-container shadow-lg rounded-4 overflow-hidden position-relative">
                     <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path|default:'/sR0spCRv7sa9mhh9I8wph8nv8B2.jpg' }}"
                          class="img-fluid w-100 rounded-4"
                          alt="{{ movie.title }}"
@@ -34,30 +34,69 @@
                         <span class="fs-3 fw-bold">{{ movie.overall_rating|floatformat:1 }}</span>
                         <small class="text-muted">({{ movie.reviews.count }} reviews)</small>
                     </div>
-                    <p class="mb-2"><strong>Year:</strong> {{ movie.release_year }}</p>
-                    <p class="mb-2"><strong>Duration:</strong> {{ movie.duration }} min</p>
+                    
+                    <div class="movie-info-grid mb-4">
+                        <div class="info-item">
+                            <i class="fa-solid fa-calendar text-primary me-2"></i>
+                            <strong>Year:</strong> {{ movie.release_year }}
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-clock text-success me-2"></i>
+                            <strong>Duration:</strong> {{ movie.duration }} min
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-film text-info me-2"></i>
+                            <strong>Type:</strong> Movie
+                        </div>
+                    </div>
+
                     <p class="mb-3"><strong>Genres:</strong> 
                         {% for genre in movie.genres.all %}
-                        <span class="badge bg-danger me-1">{{ genre.name }}</span>
+                        <span class="badge bg-danger me-1 mb-1">{{ genre.name }}</span>
                         {% endfor %}
                     </p>
-
-                    <button id="favBtn" class="btn {% if is_favorite %}btn-success{% else %}btn-warning{% endif %} w-100 py-3 fs-5 fw-bold" 
-                            data-slug="{{ movie.slug }}" data-type="movie">
-                        {% if is_favorite %}
-                        <i class="fa-solid fa-heart me-2"></i> Favorited
-                        {% else %}
-                        <i class="fa-regular fa-heart me-2"></i> Add to Favorites
+                    <!-- Action Buttons -->
+                    <div class="action-buttons mt-4">
+                        {% if movie.trailer_url %}
+                        <button class="btn btn-danger w-100 mb-3 py-3 fs-5 fw-bold rounded-3 shadow"
+                                data-bs-toggle="modal" data-bs-target="#trailerModal"
+                                style="background: linear-gradient(45deg, #ff0000, #cc0000); border: none;">
+                            <i class="fa-solid fa-play-circle me-2"></i> Watch Trailer
+                        </button>
                         {% endif %}
-                    </button>
+                        
+                        <button id="favBtn" class="btn {% if is_favorite %}btn-success{% else %}btn-warning{% endif %} w-100 py-3 fs-5 fw-bold rounded-3 shadow" 
+                                data-slug="{{ movie.slug }}" data-type="movie">
+                            {% if is_favorite %}
+                            <i class="fa-solid fa-heart me-2"></i> Favorited
+                            {% else %}
+                            <i class="fa-regular fa-heart me-2"></i> Add to Favorites
+                            {% endif %}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div class="col-lg-8">
                 <div class="text-white">
                     <h1 class="display-4 fw-bold mb-3 text-shadow">{{ movie.title }}</h1>
+                    
+                    <div class="movie-metadata mb-4">
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <span class="badge bg-primary fs-6">
+                                <i class="fa-solid fa-star me-1"></i>{{ movie.overall_rating|floatformat:1 }}
+                            </span>
+                            <span class="badge bg-success fs-6">
+                                <i class="fa-solid fa-calendar me-1"></i>{{ movie.release_year }}
+                            </span>
+                            <span class="badge bg-info fs-6">
+                                <i class="fa-solid fa-clock me-1"></i>{{ movie.duration }} min
+                            </span>
+                        </div>
+                    </div>
+
                     <p class="lead fs-3 text-white-50 mb-4">{{ movie.tagline|default:"" }}</p>
-                    <p class="fs-5 lh-lg text-white-75">{{ movie.description }}</p>
+                    <p class="fs-5 lh-lg text-white-75 mb-4">{{ movie.description }}</p>
 
                     <hr class="border-secondary my-5">
 
@@ -69,7 +108,7 @@
                     <h3 class="mb-4">Reviews <span class="text-white">({{ movie.reviews.count }})</span></h3>
                     <div id="reviews" class="mb-5">
                      
-
+                    <!-- Rest of your review code remains exactly the same -->
                     {% if request.user.is_authenticated %}
                         {% if user_review %}
                         <div class="bg-black bg-opacity-80 p-4 rounded-4 border border-success">
@@ -173,33 +212,72 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
+<!-- Trailer Modal -->
+{% if movie.trailer_url %}
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-white" id="trailerModalLabel">
+                    <i class="fa-solid fa-play-circle me-2 text-danger"></i>
+                    {{ movie.title }} - Trailer
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe src="{{ movie.trailer_url }}" 
+                            title="{{ movie.title }} Trailer" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <style>
-.movie-backdrop {
-    transform: scale(1.1);
+.movie-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
-.text-shadow {
-    text-shadow: 3px 3px 15px rgba(0,0,0,0.9);
+.info-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-.poster-container:hover img {
-    transform: scale(1.05);
-    transition: all 0.4s ease;
+.movie-stats {
+    border: 1px solid rgba(255,255,255,0.1);
 }
-.fa-star {
-    font-size: 1.1em;
+.stat-item {
+    padding: 10px 0;
 }
-.btn-sm.rounded-pill {
+.detail-card {
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: transform 0.2s ease;
+}
+.detail-card:hover {
+    transform: translateY(-2px);
+}
+.detail-item:last-child {
+    border-bottom: none !important;
+}
+.quick-actions .btn {
     transition: all 0.3s ease;
 }
-.btn-sm.rounded-pill:hover {
+.quick-actions .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
-.delete-review-form button:hover {
-    background-color: var(--bs-danger) !important;
-    border-color: var(--bs-danger) !important;
+.action-buttons .btn {
+    transition: all 0.3s ease;
+}
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
 </style>
 {% endblock %}
