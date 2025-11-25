@@ -44,75 +44,6 @@
     .nav-link:hover {
       color: #dc3545 !important;
     }
-
-.search-suggestions {
-    background: #1a1a1a !important;
-    border: 1px solid #333;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.search-suggestions .dropdown-item {
-    color: #fff;
-    padding: 10px 15px;
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.search-suggestions .dropdown-item:hover {
-    background-color: #dc3545;
-    color: white;
-}
-
-.search-suggestions .dropdown-item:last-child {
-    border-bottom: none;
-}
-
-.search-suggestions .item-type {
-    font-size: 0.8em;
-    padding: 2px 8px;
-    border-radius: 12px;
-}
-
-.search-suggestions .movie-type {
-    background: #dc3545;
-}
-
-.search-suggestions .series-type {
-    background: #0d6efd;
-}
-
-.search-suggestions .item-poster {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.search-suggestions .no-results {
-    color: #999;
-    text-align: center;
-    padding: 15px;
-    font-style: italic;
-}
-
-.search-suggestions::-webkit-scrollbar {
-    width: 6px;
-}
-
-.search-suggestions::-webkit-scrollbar-track {
-    background: #2a2a2a;
-}
-
-.search-suggestions::-webkit-scrollbar-thumb {
-    background: #dc3545;
-    border-radius: 3px;
-}
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -141,22 +72,36 @@
         </li>
       </ul>
 
-     <form class="d-flex search-form me-3 position-relative" action="{% url 'browse' %}" method="get" id="searchForm">
+<form class="d-flex search-form me-3 position-relative" action="{% url 'browse' %}" method="get" id="searchForm">
     <div class="input-group">
         <input name="q" 
-               class="form-control bg-secondary text-white border-0 search-input" 
+               type="text"
+               class="form-control bg-secondary text-white border-0 rounded-start-pill pe-5"
                placeholder="Search movies & series..." 
                value="{{ request.GET.q|default:'' }}"
-               style="min-width: 250px;"
                autocomplete="off"
-               id="searchInput">
-        <button class="btn btn-danger search-btn" type="submit">
+               id="searchInput"
+               style="min-width: 300px; height: 48px;">
+        <button class="btn btn-danger rounded-end-pill" type="submit" style="width: 50px;">
             <i class="fa-solid fa-search"></i>
         </button>
     </div>
-    
-    <div class="search-suggestions dropdown-menu w-100 mt-1" id="searchSuggestions" style="display: none;">
-        <div class="dropdown-content">
+
+    <!-- Dropdown الاقتراحات (يظهر تحت الـ input مباشرة) -->
+    <div class="position-absolute top-100 start-0 end-0 mt-1 shadow-lg rounded-3 overflow-hidden" 
+         style="z-index: 1050; display: none; max-height: 400px; background: #1a1a1a; border: 1px solid #333;"
+         id="searchSuggestions">
+        <div class="list-group list-group-flush" id="suggestionsList">
+            <!-- الاقتراحات هتتحط هنا بالـ JS -->
+        </div>
+        <div class="p-3 text-center text-muted small" id="noResults" style="display: none;">
+            No results found
+        </div>
+        <div class="p-2 bg-dark text-center small text-muted border-top" id="searchHint" style="display: none;">
+            <i class="fa-solid fa-arrow-up"></i> 
+            <i class="fa-solid fa-arrow-down"></i> to navigate • 
+            <kbd>Enter</kbd> to select • 
+            <kbd>Esc</kbd> to close
         </div>
     </div>
 </form>
@@ -203,171 +148,146 @@
   </div>
 </footer>
 
-
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 {% block scripts %}
-
 <script>
-$(document).ready(function() {
-    let searchTimeout;
-    const searchInput = $('#searchInput');
-    const searchSuggestions = $('#searchSuggestions');
-    
-    searchInput.on('input', function() {
-        const query = $(this).val().trim();
-        
-        clearTimeout(searchTimeout);
-        
-        if (query === '') {
-            hideSuggestions();
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const noResults = document.getElementById('noResults');
+    const searchHint = document.getElementById('searchHint');
+    const searchForm = document.getElementById('searchForm');
+    let currentFocus = -1;
+    let suggestions = [];
+
+    function showSuggestions() {
+        suggestionsBox.style.display = 'block';
+        searchHint.style.display = 'block';
+    }
+    function hideSuggestions() {
+        suggestionsBox.style.display = 'none';
+        searchHint.style.display = 'none';
+        currentFocus = -1;
+    }
+
+    async function fetchSuggestions(query) {
+        if (query.trim().length < 2) {
+            suggestionsList.innerHTML = '';
+            noResults.style.display = 'block';
+            suggestions = [];
             return;
         }
+
+        try {
+            const response = await fetch(`/search-suggestions/?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            suggestions = data.results || [];
+            renderSuggestions(suggestions);
+        } catch (err) {
+            suggestionsList.innerHTML = '<a class="list-group-item list-group-item-action text-danger p-3">Error loading suggestions</a>';
+        }
+    }
+
+    function renderSuggestions(items) {
+        if (items.length === 0) {
+            suggestionsList.innerHTML = '';
+            noResults.style.display = 'block';
+            return;
+        }
+
+        noResults.style.display = 'none';
+        suggestionsList.innerHTML = items.map((item, index) => `
+            <a href="${item.url}" class="list-group-item list-group-item-action bg-dark text-white border-bottom border-secondary d-flex align-items-center gap-3 px-3 py-3 suggestion-item">
+                <img src="${item.poster || `https://via.placeholder.com/40x60/333/DC3545/?text=${item.type === 'series' ? 'TV' : 'MOVIE'}`}" 
+                     class="rounded" style="width: 40px; height: 60px; object-fit: cover;">
+                <div>
+                    <div class="fw-bold">${item.title}</div>
+                    <small class="text-muted">
+                        ${item.year} • 
+                        <span class="text-danger">${item.type === 'series' ? 'TV Series' : 'Movie'}</span>
+                    </small>
+                </div>
+            </a>
+        `).join('');
+
+        document.querySelectorAll('.suggestion-item').forEach((el, i) => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = el.getAttribute('href');
+            });
+        });
+    }
+
+    searchInput.addEventListener('keydown', function(e) {
+        const items = suggestionsList.querySelectorAll('.suggestion-item');
         
-        searchTimeout = setTimeout(() => {
-            showSearchSuggestions(query);
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentFocus = (currentFocus + 1) % items.length;
+            setActive(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentFocus = currentFocus <= 0 ? items.length - 1 : currentFocus - 1;
+            setActive(items);
+        } else if (e.key === 'Enter' && currentFocus > -1) {
+            e.preventDefault();
+            if (items[currentFocus]) items[currentFocus].click();
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+
+    function setActive(items) {
+        items.forEach(item => item.classList.remove('active'));
+        if (currentFocus >= 0 && items[currentFocus]) {
+            items[currentFocus].classList.add('active');
+            items[currentFocus].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    let timeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        
+        timeout = setTimeout(() => {
+            if (query) {
+                fetchSuggestions(query);
+                showSuggestions();
+            } else {
+                hideSuggestions();
+            }
         }, 300);
     });
-    
-    searchInput.on('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            clearTimeout(searchTimeout);
+
+    document.addEventListener('click', function(e) {
+        if (!searchForm.contains(e.target)) {
             hideSuggestions();
-            performSearch($(this).val().trim());
         }
     });
-    
-    searchInput.on('blur', function() {
-        setTimeout(hideSuggestions, 200);
-    });
-    
-    searchInput.on('focus', function() {
-        const query = $(this).val().trim();
-        if (query.length > 0) {
-            showSearchSuggestions(query);
-        }
-    });
-    
-    function showSearchSuggestions(query) {
-        if (query.length < 1) {
-            hideSuggestions();
-            return;
-        }
-        
-        searchSuggestions.html(`
-            <div class="dropdown-item">
-                <i class="fa-solid fa-spinner fa-spin me-2"></i>
-                Searching...
-            </div>
-        `).show();
-        
-        $.ajax({
-            url: '{% url "api_search_suggestions" %}',
-            type: 'GET',
-            data: { q: query, limit: 8 },
-            success: function(data) {
-                displaySuggestions(data, query);
-            },
-            error: function() {
-                searchSuggestions.html(`
-                    <div class="dropdown-item no-results">
-                        <i class="fa-solid fa-exclamation-triangle me-2"></i>
-                        Failed to load suggestions
-                    </div>
-                ).show();
-            }
-        });
-    }
-    
-    function displaySuggestions(data, query) {
-        if (!data || data.length === 0) {
-            searchSuggestions.html(`
-                <div class="dropdown-item no-results">
-                    <i class="fa-solid fa-search me-2"></i>
-                    No results found for "${query}"
-                </div>
-            `).show();
-            return;
-        }
-        
-        let suggestionsHTML = '';
-        
-        data.forEach(item => {
-            const typeClass = item.content_type === 'movie' ? 'movie-type' : 'series-type';
-            const typeIcon = item.content_type === 'movie' ? 'fa-film' : 'fa-tv';
-            const posterUrl = item.poster_path ? 
-                `https://image.tmdb.org/t/p/w92${item.poster_path}` : 
-                '{% static "images/default_poster.jpg" %}';
-            
-            suggestionsHTML += `
-                <a class="dropdown-item suggestion-item" 
-                   href="{% url 'movie_detail' 'PLACEHOLDER' %}".replace('PLACEHOLDER', item.slug)
-                   data-slug="${item.slug}" 
-                   data-type="${item.content_type}">
-                    <img src="${posterUrl}" class="item-poster" alt="${item.title}" 
-                         onerror="this.src='https://via.placeholder.com/40x60/333/fff?text=No+Image'">
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-truncate me-2">${item.title}</span>
-                            <span class="item-type ${typeClass}">
-                                <i class="fa-solid ${typeIcon} me-1"></i>
-                                ${item.content_type}
-                            </span>
-                        </div>
-                        <small class="text-white-50">
-                            ${item.release_year || item.first_air_date} • 
-                            ${item.overall_rating ? '⭐ ' + item.overall_rating : 'No rating'}
-                        </small>
-                    </div>
-                </a>
-            `;
-        });
-        
-        suggestionsHTML += `
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item text-center text-warning fw-bold" 
-               href="{% url 'browse' %}?q=${encodeURIComponent(query)}">
-                <i class="fa-solid fa-list me-2"></i>
-                View all results for "${query}"
-            </a>
-        `;
-        
-        searchSuggestions.html(suggestionsHTML).show();
-        
-        $('.suggestion-item').on('click', function(e) {
-            e.preventDefault();
-            const slug = $(this).data('slug');
-            const type = $(this).data('type');
-            const url = type === 'series' ? 
-                "{% url 'series_detail' 'SLUG' %}".replace('SLUG', slug) :
-                "{% url 'movie_detail' 'SLUG' %}".replace('SLUG', slug);
-            window.location.href = url;
-        });
-    }
-    
-    function hideSuggestions() {
-        searchSuggestions.hide();
-    }
-    
-    function performSearch(query) {
-        if (query.length < 1) return;
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('q', query);
-        
-        window.location.href = '{% url "browse" %}?' + urlParams.toString();
-    }
-    
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.search-form').length) {
-            hideSuggestions();
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim()) {
+            showSuggestions();
         }
     });
 });
 </script>
+
+<style>
+    .suggestion-item:hover,
+    .suggestion-item.active {
+        background: #dc3545 !important;
+        color: white !important;
+    }
+    .suggestion-item img {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+</style>
+
 {% endblock %}
 </body>
 </html>

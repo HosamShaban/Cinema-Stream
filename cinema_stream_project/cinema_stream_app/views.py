@@ -375,48 +375,40 @@ def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
 
 
-def api_search_suggestions(request):
+def search_suggestions(request):
     query = request.GET.get('q', '').strip()
-    limit = int(request.GET.get('limit', 5))
-    
-    if len(query) < 1:
-        return JsonResponse([])
-    
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
     movies = models.Movie.objects.filter(
-        Q(title__icontains=query) | Q(description__icontains=query)
-    )[:limit]
-    
+        Q(title__icontains=query)
+    ).values('title', 'slug', 'poster', 'release_year', 'content_type')[:5]
+
     series = models.Series.objects.filter(
-        Q(title__icontains=query) | Q(description__icontains=query)
-    )[:limit]
-    
-    suggestions = []
-    
-    for movie in movies:
-        suggestions.append({
-            'id': movie.id,
-            'title': movie.title,
-            'slug': movie.slug,
-            'content_type': 'movie',
-            'poster_path': movie.poster_path,
-            'release_year': movie.release_year,
-            'overall_rating': float(movie.overall_rating) if movie.overall_rating else None
+        Q(title__icontains=query)
+    ).values('title', 'slug', 'poster', 'first_air_date', 'content_type')[:5]
+
+    results = []
+
+    for m in movies:
+        results.append({
+            'title': m['title'],
+            'year': m['release_year'],
+            'poster': m['poster'].url if m['poster'] else None,
+            'url': f"/movie/{m['slug']}/",
+            'type': 'movie'
         })
-    
-    for series in series:
-        suggestions.append({
-            'id': series.id,
-            'title': series.title,
-            'slug': series.slug,
-            'content_type': 'series',
-            'poster_path': series.poster_path,
-            'first_air_date': series.first_air_date,
-            'overall_rating': float(series.overall_rating) if series.overall_rating else None
+
+    for s in series:
+        results.append({
+            'title': s['title'],
+            'year': s['first_air_date'],
+            'poster': s['poster'].url if s['poster'] else None,
+            'url': f"/series/{s['slug']}/",
+            'type': 'series'
         })
-    
-    suggestions.sort(key=lambda x: x['overall_rating'] or 0, reverse=True)
-    
-    return JsonResponse(suggestions[:limit], safe=False)
+
+    return JsonResponse({'results': results[:8]})
 
 @csrf_exempt
 def api_post_review(request):
@@ -517,5 +509,3 @@ class ToggleFavoriteView(View):
             import traceback
             print(f"TRACEBACK: {traceback.format_exc()}")
             return JsonResponse({'success': False, 'error': 'Server error'}, status=500)
-        
-
