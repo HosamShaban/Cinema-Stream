@@ -76,7 +76,7 @@
                                 <input type="password" name="password" class="form-control form-control-lg custom-input"
                                     placeholder="Password" required>
                             </div>
-                            <button class="btn btn-danger btn-lg w-100 fw-bold shadow-lg rounded-pill hover-effect">
+                            <button class="btn btn-danger btn-lg w-100 fw-bold shadow-lg rounded-pill hover-effect login-btn">
                                 Login Now
                             </button>
                         </form>
@@ -124,8 +124,7 @@
                                         placeholder="Confirm Password" required>
                                 </div>
                             </div>
-                            <button
-                                class="btn btn-success btn-lg w-100 mt-4 fw-bold shadow-lg rounded-pill hover-effect">
+                            <button class="btn btn-success btn-lg w-100 mt-4 fw-bold shadow-lg rounded-pill hover-effect register-btn">
                                 Create Account
                             </button>
                         </form>
@@ -140,16 +139,17 @@
     </div>
 </div>
 {% endblock %}
+
 {% block extra_css %}
 <style>
-    /* إلغاء اللون الأزرق الافتراضي من Bootstrap نهائيًا */
+    /* تحسين ألوان وأزرار التبويب */
     #authTabs .nav-link {
-        color: #ff9999 !important; /* وردي فاتح حلو */
+        color: #ff9999 !important;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
         backdrop-filter: blur(10px);
+        border: 2px solid #dc3545 !important;
     }
 
-    /* لما يكون active → أبيض + أحمر */
     #authTabs .nav-link.active {
         color: white !important;
         background: linear-gradient(135deg, #dc3545, #c82333) !important;
@@ -158,34 +158,155 @@
         box-shadow: 0 20px 40px rgba(220, 53, 69, 0.7) !important;
     }
 
-    /* لما يكون غير active → وردي فاتح + خلفية شفافة + hover يبيض */
     #authTabs .nav-link:not(.active) {
-        background: rgba(30, 30, 30, 0.6) !important;
+        background: rgba(30, 30, 30, 0.8) !important;
         border: 2px solid #dc3545 !important;
     }
 
     #authTabs .nav-link:not(.active):hover {
         color: white !important;
-        background: rgba(220, 53, 69, 0.5) !important;
-        border-color: white !important;
+        background: rgba(220, 53, 69, 0.3) !important;
+        border-color: #ff6b6b !important;
         transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4) !important;
     }
 
-    /* باقي الستايلات */
-    .custom-input::placeholder { color: #ff6666 !important; font-weight: 500; }
+    /* تحسين حقول الإدخال */
+    .custom-input::placeholder { 
+        color: #ff9999 !important; 
+        font-weight: 500; 
+        opacity: 0.8;
+    }
+    
     .custom-input {
-        background: #111 !important;
+        background: rgba(20, 20, 20, 0.9) !important;
         border: 2px solid #444 !important;
         color: white !important;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
     }
+    
     .custom-input:focus {
         border-color: #dc3545 !important;
-        box-shadow: 0 0 0 0.3rem rgba(220,53,69,0.4) !important;
-        background: #222 !important;
+        box-shadow: 0 0 0 0.3rem rgba(220, 53, 69, 0.3) !important;
+        background: rgba(30, 30, 30, 0.9) !important;
+        transform: translateY(-2px);
     }
+
+    /* تحسين أزرار التسجيل والدخول */
+    .login-btn {
+        background: linear-gradient(135deg, #dc3545, #c82333) !important;
+        border: 2px solid #ff6b6b !important;
+        color: white !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .register-btn {
+        background: linear-gradient(135deg, #28a745, #20c997) !important;
+        border: 2px solid #51cf66 !important;
+        color: white !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
     .hover-effect:hover {
         transform: translateY(-8px) scale(1.05) !important;
-        box-shadow: 0 25px 50px rgba(220,53,69,0.7) !important;
+        box-shadow: 
+            0 25px 50px rgba(220, 53, 69, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        border-color: white !important;
+    }
+
+    .register-btn:hover {
+        box-shadow: 
+            0 25px 50px rgba(40, 167, 69, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        border-color: white !important;
+    }
+
+    /* تأثير glow للأزرار */
+    .login-btn::before,
+    .register-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .login-btn:hover::before,
+    .register-btn:hover::before {
+        left: 100%;
+    }
+
+    /* تحسين التنبيهات */
+    .alert {
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .alert-success {
+        background: rgba(40, 167, 69, 0.2) !important;
+        border-color: #28a745 !important;
+        color: #b2f2bb !important;
+    }
+
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.2) !important;
+        border-color: #dc3545 !important;
+        color: #ffa8a8 !important;
+    }
+
+    .alert-warning {
+        background: rgba(255, 193, 7, 0.2) !important;
+        border-color: #ffc107 !important;
+        color: #ffec99 !important;
+    }
+
+    /* تحسين الحاوية الرئيسية */
+    .bg-dark.bg-opacity-95 {
+        backdrop-filter: blur(20px);
+        background: rgba(10, 10, 10, 0.95) !important;
+        border: 2px solid #dc3545;
+        box-shadow: 
+            0 0 50px rgba(220, 53, 69, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* تحسين التبويب النشط */
+    .tab-pane {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* تحسين ملف الرفع */
+    input[type="file"].custom-input {
+        padding: 8px;
+    }
+
+    input[type="file"].custom-input::file-selector-button {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        margin-right: 10px;
+        transition: all 0.3s ease;
+    }
+
+    input[type="file"].custom-input::file-selector-button:hover {
+        background: #c82333;
+        transform: translateY(-1px);
     }
 </style>
 {% endblock %}

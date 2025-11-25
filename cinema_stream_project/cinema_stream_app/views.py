@@ -1,95 +1,177 @@
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404, render , redirect
 from django.core.paginator import Paginator
 from django.contrib import messages
 from . import models
 import json
+from django.db.models import Q
+from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 
 def home(request):
-    trending = models.get_trending_movies() 
-
-    featured = models.get_all_movies().first()
-
-    top_english = models.get_top_movies_by_language('English')
+    current_year = 2024
     
-    genres = models.Genre.objects.all()
+    recent_movies = models.Movie.objects.filter(
+        release_year__gte=2023
+    ).order_by('-release_year', '-created_at')[:15] 
+    
+    recent_series = models.Series.objects.filter(
+        first_air_date__gte=2023
+    ).order_by('-first_air_date', '-created_at')[:15]
 
-    featured = models.Movie.objects.filter(title__icontains="Interstellar").first()
-    if not featured:
-        featured = models.Movie.objects.filter(title__icontains="Inception").first()
+    if not recent_movies.exists():
+        recent_movies = models.Movie.objects.order_by('-release_year', '-created_at')[:15]
+        print("No recent movies found, using fallback")
+    
+    if not recent_series.exists():
+        recent_series = models.Series.objects.order_by('-first_air_date', '-created_at')[:15]
+        print("No recent series found, using fallback")
+
+    recently_added = list(recent_movies) + list(recent_series)
+    
+    def get_content_year(item):
+        if hasattr(item, 'release_year') and item.release_year:
+            return item.release_year
+        elif hasattr(item, 'first_air_date') and item.first_air_date:
+            return item.first_air_date
+        return 0
+    
+    recently_added.sort(key=get_content_year, reverse=True)
+    recently_added = recently_added[:20]
+
+    featured = models.Movie.objects.filter(
+        release_year__gte=2023,
+        overall_rating__gte=7.0
+    ).order_by('-overall_rating').first()
+    
     if not featured:
         featured = models.Movie.objects.filter(is_premium=True).order_by('-overall_rating').first()
+    if not featured:
+        featured = models.Movie.objects.order_by('-overall_rating').first()
 
-    trending = models.Movie.objects.order_by('-overall_rating')[:20]
-    top_english = models.Movie.objects.filter(language__icontains='English').order_by('-overall_rating')[:8]
-    genres = models.Genre.objects.all()
+    trending_movies = models.Movie.objects.filter(
+        release_year__gte=2022
+    ).order_by('-overall_rating')[:15]
+    
+    trending_series = models.Series.objects.filter(
+        first_air_date__gte=2022
+    ).order_by('-overall_rating')[:15]
+    
+    trending = list(trending_movies) + list(trending_series)
+    trending.sort(key=lambda x: x.overall_rating, reverse=True)
+    trending = trending[:20]
+
+    top_english_movies = models.Movie.objects.filter(
+        language__icontains='en',
+        release_year__gte=2022
+    ).order_by('-overall_rating')[:8]
+    
+    if not top_english_movies.exists():
+        top_english_movies = models.Movie.objects.filter(
+            language__icontains='en'
+        ).order_by('-overall_rating')[:8]
+    
+    top_english_series = models.Series.objects.filter(
+        language__icontains='en', 
+        first_air_date__gte=2022
+    ).order_by('-overall_rating')[:8]
+    
+    if not top_english_series.exists():
+        top_english_series = models.Series.objects.filter(
+            language__icontains='en'
+        ).order_by('-overall_rating')[:8]
 
     user_favorites = []
-    if 'user_id' in request.session:
-        user = models.get_logged_user(request)
-        user_favorites = [fav.movie for fav in models.Favorite.objects.filter(user=user)]
+    if request.user.is_authenticated:
+        movie_favs = request.user.favorites.filter(movie__isnull=False).values_list('movie__slug', flat=True)
+        series_favs = request.user.favorites.filter(series__isnull=False).values_list('series__slug', flat=True)
+        user_favorites = list(movie_favs) + list(series_favs)
+    
+    print(f"User favorites: {user_favorites}")
 
-    recently_added = models.Movie.objects.order_by('created_at')[:12]
-
+    genres = models.Genre.objects.all()[:20]
     context = {
         'recently_added': recently_added,
         'featured': featured,
         'trending': trending,
-        'top_english': top_english,
+        'top_english_movies': top_english_movies,
+        'top_english_series': top_english_series,
         'genres': genres,
         'user_favorites': user_favorites,
     }
+    
+    for item in recently_added[:5]:
+        year = get_content_year(item)
+        print(f" - {item.title} ({year}) - {item.content_type}")
+
     return render(request, 'home.html', context)
 
 def browse(request):
     genres = models.Genre.objects.all()
-
     query = request.GET.get('q')
     genre = request.GET.get('genre')
     year = request.GET.get('year')
-    ctype = request.GET.get('type')
+    content_type = request.GET.get('type', 'all')
 
-    movies = models.Movie.objects.all().order_by('-overall_rating')
-
-    if request.GET.get('genre'):
-        movies = movies.filter(genres__slug=request.GET['genre'])
-    if request.GET.get('year'):
-        movies = movies.filter(release_year__year=request.GET['year'])
-    if request.GET.get('type'):
-        movies = movies.filter(content_type=request.GET['type'])
+    movies = models.Movie.objects.all()
+    series = models.Series.objects.all()
 
     if query:
-        movies = models.search_movies(query)
-    else:
-        movies = models.filter_movies(genre=genre, year=year, content_type=ctype)
+        movies = movies.filter(title__icontains=query)
+        series = series.filter(title__icontains=query)
+    
+    if genre:
+        movies = movies.filter(genres__slug=genre)
+        series = series.filter(genres__slug=genre)
+    
+    if year:
+        movies = movies.filter(release_year=year)
+        series = series.filter(first_air_date=year)
+    
+    if content_type != 'all':
+        if content_type == 'movie':
+            series = series.none()
+        elif content_type == 'series':
+            movies = movies.none()
 
-    paginator = Paginator(movies, 20)
+    from itertools import chain
+    from operator import attrgetter
+    
+    all_content = sorted(
+        chain(movies, series),
+        key=attrgetter('overall_rating'),
+        reverse=True
+    )
+
+    paginator = Paginator(all_content, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
-        'movies': page_obj,
-        'genres': models.Genre.objects.all(),
+        'content': page_obj,
+        'genres': genres,
         'current_genre': genre,
         'current_year': year,
-        'current_type': ctype,
+        'current_type': content_type,
         'query': query,
-        'page_title': 'Browse Movies'
+        'page_title': 'Browse Content'
     }
+    
     return render(request, 'browse.html', context)
 
 def movie_detail(request, slug):
-    movie = models.get_movie_by_slug(slug)
+    movie = get_object_or_404(models.Movie, slug=slug)
 
     is_fav = False
     user_review = None
 
-    if 'user_id' in request.session:
-        user = models.get_logged_user(request)
-        is_fav = models.is_favorite(user, movie)
+    if request.user.is_authenticated:
+        user = request.user
+        is_fav = models.Favorite.objects.filter(user=user, movie=movie).exists()
         user_review = movie.reviews.filter(user=user).first()
 
     context = {
@@ -99,6 +181,42 @@ def movie_detail(request, slug):
         'page_title': movie.title
     }
     return render(request, 'movie_detail.html', context)
+
+def series_detail(request, slug):
+    series = get_object_or_404(models.Series, slug=slug)
+    reviews = models.Review.objects.filter(movie=None)
+    user_review = reviews.filter(user=request.user).first()
+    
+    is_fav = False
+    if request.user.is_authenticated:
+        is_fav = models.Favorite.objects.filter(user=request.user, series=series).exists()
+
+    context = {
+    'series': series,
+    'reviews': reviews,
+    'user_review': user_review,
+    'is_favorite': request.user.is_authenticated and request.user.favorites.filter(series=series).exists(),
+}
+    return render(request, 'series_detail.html', context)
+
+
+def login_view(request):
+    active_tab = 'login'
+
+    if request.method == "POST":
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        user = models.authenticate_user(email, password)
+
+        if user:
+            from django.contrib.auth import login
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.first_name}!", extra_tags='login')
+            return redirect('home')
+        else:
+            messages.error(request, "Invalid email or password.", extra_tags='login')
+
+    return render(request, 'auth.html', {'active_tab': active_tab})
 
 def register(request):
     active_tab = 'register'
@@ -112,68 +230,65 @@ def register(request):
                 messages.error(request, value, extra_tags='register')
         else:
             user = models.create_user(request.POST, avatar_file=avatar_file)
-            request.session['user_id'] = user.id
+            from django.contrib.auth import login
+            login(request, user)
             messages.success(request, f"Welcome {user.first_name}! Account created successfully.", extra_tags='register')
             return redirect('home')
 
     return render(request, 'auth.html', {'active_tab': active_tab})
 
-
-def login_view(request):
-    active_tab = 'login'
-
-    if request.method == "POST":
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        user = models.authenticate_user(email, password)
-
-        if user:
-            request.session['user_id'] = user.id
-            messages.success(request, f"Welcome back, {user.first_name}!", extra_tags='login')
-            return redirect('home')
-        else:
-            messages.error(request, "Invalid email or password.", extra_tags='login')
-
-    return render(request, 'auth.html', {'active_tab': active_tab})
-
 def logout_view(request):
+    from django.contrib.auth import logout
     storage = messages.get_messages(request)
     storage.used = True
-    request.session.flush()
-    request.session.clear_expired()
+    logout(request)
     
     messages.success(request, "You have been logged out successfully.")
-    
     return redirect('home')
 
 def profile(request):
-    user = models.get_logged_user(request)
-    if not user:
+    user = request.user
+    if not user.is_authenticated:
         messages.error(request, "Please login first.")
         return redirect('login')
 
-    profile = user.profile
-    user_favorites = models.Favorite.objects.filter(user=user).select_related('movie')
-    reviews = models.Review.objects.filter(user=user).select_related('movie')
+    print(f"PROFILE DEBUG - User: {user.username}")
+
+    favorites = models.Favorite.objects.filter(user=user).select_related('movie', 'series')
+    print(f"Total favorites in DB: {favorites.count()}")
+
+    favorite_movies = []
+    favorite_series = []
+    
+    for fav in favorites:
+        print(f"Processing favorite: {fav}")
+        if fav.movie:
+            print(f"Movie found: {fav.movie.title} (Slug: {fav.movie.slug})")
+            favorite_movies.append(fav.movie)
+        elif fav.series:
+            print(f" Series found: {fav.series.title} (Slug: {fav.series.slug})")
+            favorite_series.append(fav.series)
+        else:
+            print(" Invalid favorite")
+
+    print(f"Final movies list: {[m.title for m in favorite_movies]}")
+    print(f"Final series list: {[s.title for s in favorite_series]}")
 
     context = {
-        'profile': profile,
-        'user_favorites': user_favorites,
-        'reviews': reviews,
+        'user': user,
+        'profile': user.profile,
+        'favorite_movies': favorite_movies,
+        'favorite_series': favorite_series,
+        'favorites_count': len(favorite_movies) + len(favorite_series),
+        'reviews': models.Review.objects.filter(user=user),
         'page_title': 'My Profile'
     }
 
-    ser = models.get_logged_user(request)
-    user_favorites = [f.movie for f in models.Favorite.objects.filter(user=user)] if user else []
-    return render(request, 'profile.html', {
-        'user_favorites': user_favorites
-    })
+    return render(request, 'profile.html', context)
 
 def edit_profile(request):
-    user = models.get_logged_user(request)
-    if not user:
-        messages.error(request, "Please login first.")
-        return redirect('login')
+    user = request.user
+    profile = user.profile
 
     if request.method == "POST":
         first_name = request.POST.get('first_name')
@@ -189,6 +304,9 @@ def edit_profile(request):
         if not email:
             errors['email'] = "Email is required."
 
+        if User.objects.exclude(pk=user.pk).filter(email=email).exists():
+            errors['email'] = "This email is already taken."
+
         if errors:
             for key, value in errors.items():
                 messages.error(request, value)
@@ -197,13 +315,17 @@ def edit_profile(request):
             user.last_name = last_name
             user.email = email
             if avatar_file:
-                user.profile.avatar = avatar_file
+                profile.avatar = avatar_file
             user.save()
-            user.profile.save()
-            messages.success(request, "Profile updated successfully.")
+            profile.save()
+            messages.success(request, "Profile updated successfully!")
             return redirect('profile')
 
-    return render(request, 'edit_profile.html', {'profile': user.profile})
+    context = {
+        'user': user,
+        'profile': profile,
+    }
+    return render(request, 'edit_profile.html', context)
 
 
 def toggle_favorite(request, slug):
@@ -223,6 +345,29 @@ def toggle_favorite(request, slug):
 
     return redirect('movie_detail', slug=slug)
 
+def toggle_series_favorite(request, slug):
+    user = models.get_logged_user(request)
+    if not user:
+        messages.error(request, "Please login first.")
+        return redirect('login')
+
+    series = models.Series.objects.get(slug=slug)
+
+    is_fav = models.Favorite.objects.filter(user=user, series=series).exists()
+    
+    if is_fav:
+        models.Favorite.objects.filter(user=user, series=series).delete()
+        messages.info(request, f"Removed {series.title} from favorites.")
+    else:
+        fav, created = models.Favorite.objects.get_or_create(
+            user=user, 
+            series=series,
+            defaults={'series': series}
+        )
+        messages.success(request, f"Added {series.title} to favorites!")
+    
+    return redirect('series_detail', slug=slug)
+
 def add_review(request, slug):
     movie = models.get_movie_by_slug(slug)
     if request.method == "POST":
@@ -236,42 +381,120 @@ def add_review(request, slug):
             messages.error(request, "Please provide both rating and comment.")
     return redirect('movie_detail', slug=slug)
 
+@login_required
+def api_delete_review(request, review_id):
+    try:
+        review = get_object_or_404(models.Review, id=review_id, user=request.user)
+
+        if review.movie:
+            movie = review.movie
+            review.delete()
+            models.update_movie_rating(movie)
+            
+        else:
+            review.delete()
+
+        return JsonResponse({'success': True, 'message': 'تم حذف التقييم بنجاح!'})
+
+    except models.Review.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'التقييم غير موجود'}, status=404)
+    except Exception as e:
+        print("خطأ في الحذف:", e)
+        return JsonResponse({'success': False, 'error': 'حدث خطأ'}, status=500)
+
 def about(request):
     return render(request, 'about.html', {'page_title': 'About Us'})
 
-@csrf_exempt
+def search_suggestions(request):
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    results = []
+
+    movies = models.Movie.objects.filter(
+        Q(title__icontains=query)
+    ).only('title', 'slug', 'poster', 'release_year')[:6]
+
+    for m in movies:
+        results.append({
+            'title': m.title,
+            'year': m.release_year or 2024,
+            'poster': m.poster.url if m.poster else None,
+            'url': f"/movie/{m.slug}/",
+            'type': 'movie'
+        })
+
+    series = models.Series.objects.filter(
+        Q(title__icontains=query)
+    ).only('title', 'slug', 'poster', 'first_air_date')[:6]
+
+    for s in series:
+        results.append({
+            'title': s.title,
+            'year': s.first_air_date or 2024,
+            'poster': s.poster.url if s.poster else None,
+            'url': f"/series/{s.slug}/",
+            'type': 'series'
+        })
+
+    return JsonResponse({'results': results[:10]})
+
+@login_required
 def api_post_review(request):
-    if request.method == 'POST':
-        try:
-            rating = request.POST.get('rating')
-            comment = request.POST.get('comment')
-            slug = request.POST.get('slug')
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
 
-            if not slug or not rating:
-                return JsonResponse({'success': False, 'error': 'Missing data'}, status=400)
+    try:
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment', '')
+        slug = request.POST.get('slug')
+        content_type_str = request.POST.get('content_type', 'movie')
 
-            movie = get_object_or_404(models.Movie, slug=slug)
-            user = request.user
+        print(f"DEBUG → slug: {slug}, type: {content_type_str}, rating: {rating}")
 
-            review, created = models.Review.objects.update_or_create(
-                user=user, movie=movie,
-                defaults={'rating': int(rating), 'comment': comment}
-            )
+        if not slug or not rating:
+            return JsonResponse({'success': False, 'error': 'Missing slug or rating'})
 
-            models.update_movie_rating(movie)
+        rating = int(rating)
 
-            return JsonResponse({
-                'success': True,
-                'message': 'Review submitted successfully!',
-                'rating': review.rating,
-                'comment': review.comment,
-                'date': review.created_at.strftime("%b %d, %Y")
-            })
+        if content_type_str == 'series':
+            content = models.Series.objects.get(slug=slug)
+            movie_obj = None
+            print(f"Found Series: {content.title}")
+        else:
+            content = models.Movie.objects.get(slug=slug)
+            movie_obj = content
+            print(f"Found Movie: {content.title}")
 
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        review, created = models.Review.objects.update_or_create(
+            user=request.user,
+            movie=movie_obj,
+            defaults={'rating': rating, 'comment': comment}
+        )
 
-    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=405)
+        print(f"Review {'created' if created else 'updated'} → ID: {review.id}")
+
+        return JsonResponse({
+            'success': True,
+            'message': 'تم بنجاح!',
+            'rating': review.rating,
+            'comment': review.comment,
+        })
+
+    except models.Series.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'المسلسل غير موجود'})
+    except models.Movie.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'الفيلم غير موجود'})
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'التقييم لازم يكون رقم'})
+    except Exception as e:
+        print("خطأ كبير في api_post_review:", e)
+        print("نوع الخطأ:", type(e).__name__)
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': 'خطأ داخلي، جربي تاني'}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):
@@ -279,33 +502,62 @@ class ToggleFavoriteView(View):
         try:
             data = json.loads(request.body)
             slug = data.get('slug')
+            content_type = data.get('content_type', 'movie')
+            
+            print(f"ToggleFavoriteView: slug={slug}, type={content_type}")
+            
             if not slug:
                 return JsonResponse({'success': False, 'error': 'Slug required'}, status=400)
 
-            movie = models.Movie.objects.get(slug=slug)
-
-            user = models.get_logged_user(request)
-            if not user:
+            if not request.user.is_authenticated:
                 return JsonResponse({
                     'success': False,
                     'login_required': True,
                     'error': 'Please login first'
                 }, status=200)
 
-            fav, created = models.Favorite.objects.get_or_create(user=user, movie=movie)
-            if not created:
-                fav.delete()
-                is_favorite = False
+            user = request.user
+            print(f"User: {user.username or user.email}")
+
+            if content_type == 'movie':
+                content = models.Movie.objects.get(slug=slug)
+                print(f"Movie: {content.title}")
+                
+                existing = models.Favorite.objects.filter(user=user, movie=content).first()
+                if existing:
+                    existing.delete()
+                    is_favorite = False
+                    print("Removed from favorites")
+                else:
+                    models.Favorite.objects.create(user=user, movie=content)
+                    is_favorite = True
+                    print("Added to favorites")
+                    
+            elif content_type == 'series':
+                content = models.Series.objects.get(slug=slug)
+                print(f"Series: {content.title}")
+                
+                existing = models.Favorite.objects.filter(user=user, series=content).first()
+                if existing:
+                    existing.delete()
+                    is_favorite = False
+                    print("Removed from favorites")
+                else:
+                    models.Favorite.objects.create(user=user, series=content)
+                    is_favorite = True
+                    print("Added to favorites")
             else:
-                is_favorite = True
+                return JsonResponse({'success': False, 'error': 'Invalid content type'}, status=400)
 
             return JsonResponse({
                 'success': True,
                 'is_favorite': is_favorite
             })
 
-        except models.Movie.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Movie not found'}, status=404)
+        except (models.Movie.DoesNotExist, models.Series.DoesNotExist):
+            return JsonResponse({'success': False, 'error': 'Content not found'}, status=404)
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=500)
-        
+            print(f"ERROR: {e}")
+            import traceback
+            print(f"TRACEBACK: {traceback.format_exc()}")
+            return JsonResponse({'success': False, 'error': 'Server error'}, status=500)

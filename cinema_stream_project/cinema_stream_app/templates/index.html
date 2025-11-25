@@ -23,45 +23,330 @@
       background-color: black;
       color: white;
     }
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1030;
+      background-color: rgba(0, 0, 0, 0.95) !important;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #333;
+    }
+    body {
+      padding-top: 70px;
+    }
+  .navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1030;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #333;
+  }
+
+  
+  .nav-link {
+    transition: color 0.3s ease;
+    padding: 8px 16px !important;
+    border-radius: 6px;
+    margin: 0 2px;
+  }
+  
+  .nav-link:hover {
+    color: #dc3545 !important;
+    background-color: rgba(220, 53, 69, 0.1);
+  }
+  
+  .search-form {
+    min-width: 400px;
+  }
+  
+  #searchInput:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    border-color: #dc3545 !important;
+    background-color: #2d2d2d !important;
+  }
+  
+  .search-btn {
+    transition: all 0.3s ease;
+  }
+  
+  .search-btn:hover {
+    background-color: #c82333 !important;
+  }
+  
+  /* تنسيق اقتراحات البحث */
+  .search-suggestions {
+    background: #1a1a1a !important;
+    border: 1px solid #444;
+    border-radius: 8px;
+  }
+  
+  .search-suggestions .list-group-item {
+    background: transparent;
+    border-color: #333;
+    color: #fff;
+    padding: 12px 16px;
+    transition: all 0.2s ease;
+  }
+  
+  .search-suggestions .list-group-item:hover {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  /* تحسين responsive */
+  @media (max-width: 992px) {
+    .search-form {
+      min-width: 100%;
+      margin: 10px 0;
+    }
+    
+    .navbar-nav.mx-auto {
+      margin: 10px 0;
+    }
+  }
+    .search-form {
+      min-width: 300px;
+    }
+    .nav-link {
+      transition: color 0.3s ease;
+    }
+    .nav-link:hover {
+      color: #dc3545 !important;
+    }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body class="bg-dark text-white">
-<nav class="navbar navbar-expand-lg navbar-dark bg-black">
+  
+<nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container">
-  <i class="fa-solid fa-film fa-lg me-2" style="color:white;"></i>
-    <a class="navbar-brand" href="/">{% block brand %}Cinema Stream{% endblock %}</a>
+    <!-- الشعار على اليسار -->
+    <i class="fa-solid fa-film fa-lg me-2" style="color:white;"></i>
+    <a class="navbar-brand fw-bold" href="/">{% block brand %}Cinema Stream{% endblock %}</a>
+    
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navcollapse">
       <span class="navbar-toggler-icon"></span>
     </button>
+    
     <div class="collapse navbar-collapse" id="navcollapse">
-      <form class="d-flex ms-auto" action="{% url 'browse' %}">
-        <input name="q" class="form-control me-2" placeholder="Search Movies" value="{{ request.GET.q|default:'' }}">
-        <button class="btn btn-danger">Search</button>
+      <!-- البحث في المنتصف -->
+      <form class="d-flex search-form mx-auto position-relative" action="{% url 'browse' %}" method="get" id="searchForm" style="max-width: 500px; width: 100%;">
+        <div class="input-group">
+          <input name="q" 
+                 type="text"
+                 class="form-control bg-secondary text-white border-secondary"
+                 placeholder="Search movies & series..." 
+                 value="{{ request.GET.q|default:'' }}"
+                 autocomplete="off"
+                 id="searchInput"
+                 style="height: 42px;">
+          <button class="btn btn-danger border-0" type="submit" style="min-width: 50px;">
+            <i class="fa-solid fa-search"></i>
+          </button>
+        </div>
+
+        <!-- Dropdown الاقتراحات -->
+        <div class="position-absolute top-100 start-0 end-0 mt-1 shadow-lg rounded-3 overflow-hidden border border-secondary" 
+             style="z-index: 9999; display: none; max-height: 70vh; background: #141414 !important;" 
+             id="searchSuggestions">
+          <div class="list-group list-group-flush overflow-auto" style="max-height: 70vh;" id="suggestionsList">
+          </div>
+          <div class="p-3 text-center text-muted small border-top border-secondary" id="noResults" style="display: none; color: #aaa !important;">
+            No Results
+          </div>
+        </div>
       </form>
-      <ul class="navbar-nav ms-3">
-        {% if request.session.user_id %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+
+      <!-- جميع الروابط على اليمين -->
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">
+            <i class="fa-solid fa-house me-1"></i>Home
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'browse' %}">
+            <i class="fa-solid fa-compass me-1"></i>Browse
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'about' %}">
+            <i class="fa-solid fa-info-circle me-1"></i>About Us
+          </a>
+        </li>
+        
+        {% if request.session.user_id or user.is_authenticated %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="fa-solid fa-user-circle me-1"></i>Profile
+          </a>
+          <ul class="dropdown-menu dropdown-menu-dark">
+            <li><a class="dropdown-item" href="{% url 'profile' %}">
+              <i class="fa-solid fa-user me-2"></i>My Profile
+            </a></li>
+            <li><a class="dropdown-item" href="{% url 'logout' %}">
+              <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+            </a></li>
+          </ul>
+        </li>
         {% else %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Sign Up</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">
+            <i class="fa-solid fa-right-to-bracket me-1"></i>Login
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'register' %}">
+            <i class="fa-solid fa-user-plus me-1"></i>Sign Up
+          </a>
+        </li>
         {% endif %}
       </ul>
     </div>
   </div>
 </nav>
-
 <main class="py-4">
   {% block content %}{% endblock %}
 </main>
 
-<footer class="py-2 text-end mt-1">
-  <div class="container text-center">© Cinema Stream</div>
+<footer class="py-3 mt-5">
+  <div class="container text-center">
+    <p class="mb-0">&copy; 2025 Cinema Stream.</p>
+  </div>
 </footer>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-{% block scripts %}{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const noResults = document.getElementById('noResults');
+    const searchHint = document.getElementById('searchHint');
+    const searchForm = document.getElementById('searchForm');
+    let currentFocus = -1;
+    let suggestions = [];
+
+    function showSuggestions() {
+        suggestionsBox.style.display = 'block';
+        searchHint.style.display = 'block';
+    }
+    function hideSuggestions() {
+        suggestionsBox.style.display = 'none';
+        searchHint.style.display = 'none';
+        currentFocus = -1;
+    }
+
+    async function fetchSuggestions(query) {
+        if (query.trim().length < 2) {
+            suggestionsList.innerHTML = '';
+            noResults.style.display = 'block';
+            suggestions = [];
+            return;
+        }
+
+        try {
+            const response = await fetch(`/search-suggestions/?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            suggestions = data.results || [];
+            renderSuggestions(suggestions);
+        } catch (err) {
+            suggestionsList.innerHTML = '<a class="list-group-item list-group-item-action text-danger p-3">Error loading suggestions</a>';
+        }
+    }
+
+    function renderSuggestions(items) {
+        if (items.length === 0) {
+            suggestionsList.innerHTML = '';
+            noResults.style.display = 'block';
+            return;
+        }
+
+        noResults.style.display = 'none';
+        suggestionsList.innerHTML = items.map((item, index) => `
+            <a href="${item.url}" class="list-group-item list-group-item-action bg-dark text-white border-bottom border-secondary d-flex align-items-center gap-3 px-3 py-3 suggestion-item">
+                <img src="${item.poster || `https://via.placeholder.com/40x60/333/DC3545/?text=${item.type === 'series' ? 'TV' : 'MOVIE'}`}" 
+                     class="rounded" style="width: 40px; height: 60px; object-fit: cover;">
+                <div>
+                    <div class="fw-bold">${item.title}</div>
+                    <small class="text-muted">
+                        ${item.year} • 
+                        <span class="text-danger">${item.type === 'series' ? 'TV Series' : 'Movie'}</span>
+                    </small>
+                </div>
+            </a>
+        `).join('');
+
+        document.querySelectorAll('.suggestion-item').forEach((el, i) => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = el.getAttribute('href');
+            });
+        });
+    }
+
+    searchInput.addEventListener('keydown', function(e) {
+        const items = suggestionsList.querySelectorAll('.suggestion-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentFocus = (currentFocus + 1) % items.length;
+            setActive(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentFocus = currentFocus <= 0 ? items.length - 1 : currentFocus - 1;
+            setActive(items);
+        } else if (e.key === 'Enter' && currentFocus > -1) {
+            e.preventDefault();
+            if (items[currentFocus]) items[currentFocus].click();
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+
+    function setActive(items) {
+        items.forEach(item => item.classList.remove('active'));
+        if (currentFocus >= 0 && items[currentFocus]) {
+            items[currentFocus].classList.add('active');
+            items[currentFocus].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    let timeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timeout);
+        const query = this.value.trim();
+        
+        timeout = setTimeout(() => {
+            if (query) {
+                fetchSuggestions(query);
+                showSuggestions();
+            } else {
+                hideSuggestions();
+            }
+        }, 300);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchForm.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim()) {
+            showSuggestions();
+        }
+    });
+});
+</script>
+
+{% endblock %}
 </body>
 </html>
