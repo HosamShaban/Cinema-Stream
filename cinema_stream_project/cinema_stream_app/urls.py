@@ -18,4 +18,5 @@ urlpatterns = [
     path('api/favorite/toggle/', views.ToggleFavoriteView.as_view(), name='api_toggle_favorite'),
     path('api/review/', views.api_post_review, name='api_post_review'),
     path('search-suggestions/', views.search_suggestions, name='search_suggestions'),
+    path('api/update-ratings/', views.update_all_ratings, name='update_ratings'),
 ]
