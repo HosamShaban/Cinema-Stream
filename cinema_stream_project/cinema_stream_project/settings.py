@@ -36,6 +36,9 @@ ALLOWED_HOSTS = [
     "cinema-stream-web.fly.dev",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://cinema-stream-web.fly.dev",
+]
 
 # Application definition
 
