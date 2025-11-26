@@ -4,6 +4,7 @@ import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.db.models import Avg
 from django.forms import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -51,6 +52,13 @@ class Movie(models.Model):
                 return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
         
         return '/static/images/default_poster.jpg'
+    
+    def update_rating(self):
+        avg = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        self.overall_rating = round(avg, 1) if avg is not None else 0.0
+        self.rating_count = self.reviews.count()
+        self.save()
+        print(f"Updated movie rating: {self.overall_rating} from {self.rating_count} reviews")
 
 
 class Series(models.Model):
