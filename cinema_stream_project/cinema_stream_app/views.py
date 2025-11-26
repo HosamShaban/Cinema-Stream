@@ -210,6 +210,7 @@ def login_view(request):
     if request.method == "POST":
         email = request.POST.get('email')
         password = request.POST.get('password')
+        
         user = models.authenticate_user(email, password)
 
         if user:

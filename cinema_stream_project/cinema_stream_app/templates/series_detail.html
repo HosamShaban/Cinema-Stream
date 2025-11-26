@@ -383,7 +383,9 @@
                     : '<i class="fa-regular fa-heart me-2"></i> Add to Favorites';
                 btn.classList.toggle('btn-danger', data.is_favorite);
                 btn.classList.toggle('btn-warning', !data.is_favorite);
-            }
+            } else if (data.login_required) {
+            window.location.href = "{% url 'login' %}?next={{ request.path }}";
+        }
         });
     });
 
@@ -418,7 +420,7 @@
                 body: new FormData(this)
             })
             .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else alert('فشل الحذف'); });
+            .then(data => { if (data.success) location.reload(); else alert('Error'); });
         });
     });
 </script>

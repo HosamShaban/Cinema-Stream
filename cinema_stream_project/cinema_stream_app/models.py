@@ -3,6 +3,7 @@ import re
 import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 from django.forms import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -196,10 +197,15 @@ def create_user(postData, avatar_file=None):
     return user
 
 def authenticate_user(email, password):
-    user = User.objects.filter(email=email).first()
-    if user and bcrypt.checkpw(password.encode(), user.password.encode()):
-        return user
-    return None
+    try:
+        user = User.objects.filter(email=email).first()
+        if user:
+            authenticated_user = authenticate(username=user.username, password=password)
+            return authenticated_user
+        return None
+    except Exception as e:
+        print(f"Authentication error: {e}")
+        return None
 
 def get_logged_user(request):
     if "user_id" in request.session:
