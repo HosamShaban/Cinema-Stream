@@ -536,7 +536,28 @@ def api_post_review(request):
         print("Error in api_post_review:", e)
         import traceback
         traceback.print_exc()
-        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500)   
+        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500) 
+
+
+def update_all_ratings(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Admin only'})
+    
+    updated_movies = 0
+    updated_series = 0
+    
+    for movie in models.Movie.objects.all():
+        movie.update_rating()
+        updated_movies += 1
+    
+    for series in models.Series.objects.all():
+        series.update_rating()
+        updated_series += 1
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Updated {updated_movies} movies and {updated_series} series'
+    })      
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):
