@@ -30,7 +30,11 @@ SECRET_KEY = 'django-insecure-@o*q7_6k8n791^we4&d=4(xhatb%vm++j2xv!bnvs%aje%5nh2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "cinema-stream-web.fly.dev",
+]
 
 
 # Application definition
