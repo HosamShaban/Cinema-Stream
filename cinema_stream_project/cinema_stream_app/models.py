@@ -121,6 +121,27 @@ class Review(models.Model):
     class Meta:
         unique_together = [('movie', 'user'), ('series', 'user')]
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        
+        super().save(*args, **kwargs)
+        
+        if self.movie:
+            self.movie.update_rating()
+        elif self.series:
+            self.series.update_rating()
+    
+    def delete(self, *args, **kwargs):
+        movie = self.movie
+        series = self.series
+        
+        super().delete(*args, **kwargs)
+        
+        if movie:
+            movie.update_rating()
+        elif series:
+            series.update_rating()    
+
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     movie = models.ForeignKey('Movie', on_delete=models.CASCADE, null=True, blank=True)
