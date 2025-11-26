@@ -12,8 +12,7 @@ Watch, rate, review, and save your favorite movies & series – all in one beaut
 
 > "Where Stories Come to Life"
 
-![Cinema Stream Preview](https://via.placeholder.com/1200x600/111/eee?text=Cinema+Stream+Preview)  
-*(Replace with your actual screenshot)*
+![Cinema Stream Preview](https://via.placeholder.com/1200x600/111/eee?text=Cinema+Stream+Preview)
 
 
 ## Features
