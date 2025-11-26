@@ -423,11 +423,8 @@ def api_delete_review(request, review_id):
         series = review.series
         
         review.delete()
-        print("Review deleted successfully")
-
-        if movie:
-            models.update_movie_rating(movie)
-            print("Movie rating updated")
+        
+        print("Review deleted successfully and rating updated automatically")
 
         return JsonResponse({
             'success': True, 
@@ -506,6 +503,9 @@ def api_post_review(request):
                 defaults={'rating': rating, 'comment': comment}
             )
             print(f"Series Review {'created' if created else 'updated'} → ID: {review.id}")
+            
+            content.update_rating()
+            
         else:
             content = models.Movie.objects.get(slug=slug)
             review, created = models.Review.objects.update_or_create(
@@ -514,12 +514,16 @@ def api_post_review(request):
                 defaults={'rating': rating, 'comment': comment}
             )
             print(f"Movie Review {'created' if created else 'updated'} → ID: {review.id}")
+            
+            content.update_rating()
 
         return JsonResponse({
             'success': True,
             'message': 'Review submitted successfully!',
             'rating': review.rating,
             'comment': review.comment,
+            'overall_rating': float(content.overall_rating),
+            'reviews_count': content.reviews.count()
         })
 
     except models.Series.DoesNotExist:
@@ -532,8 +536,28 @@ def api_post_review(request):
         print("Error in api_post_review:", e)
         import traceback
         traceback.print_exc()
-        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500)
+        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500) 
+
+
+def update_all_ratings(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Admin only'})
     
+    updated_movies = 0
+    updated_series = 0
+    
+    for movie in models.Movie.objects.all():
+        movie.update_rating()
+        updated_movies += 1
+    
+    for series in models.Series.objects.all():
+        series.update_rating()
+        updated_series += 1
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Updated {updated_movies} movies and {updated_series} series'
+    })      
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):

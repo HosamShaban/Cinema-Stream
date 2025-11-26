@@ -31,27 +31,20 @@
 
                 <ul class="nav nav-pills nav-fill mb-5 gap-3" id="authTabs" role="tablist">
                     <li class="nav-item flex-fill">
-                        <a class="nav-link text-center fs-5 py-3 rounded-pill fw-bold transition-all
-           {% if active_tab == 'login' %}
-               active bg-danger text-white shadow-lg border border-white
-           {% else %}
-               bg-dark bg-opacity-70 text-white-75 border border-danger border-2
-           {% endif %}" data-bs-toggle="tab" href="#login">
+                        <a class="nav-link text-center fs-5 py-3 rounded-pill fw-bold position-relative overflow-hidden
+               {% if request.resolver_match.url_name == 'login' or active_tab == 'login' %}active{% endif %}"
+                            href="#login" data-bs-toggle="tab" role="tab">
                             Login
                         </a>
                     </li>
                     <li class="nav-item flex-fill">
-                        <a class="nav-link text-center fs-5 py-3 rounded-pill fw-bold transition-all
-           {% if active_tab == 'register' %}
-               active bg-danger text-white shadow-lg border border-white
-           {% else %}
-               bg-dark bg-opacity-70 text-white-75 border border-danger border-2
-           {% endif %}" data-bs-toggle="tab" href="#register">
+                        <a class="nav-link text-center fs-5 py-3 rounded-pill fw-bold position-relative overflow-hidden
+               {% if request.resolver_match.url_name == 'register' or active_tab == 'register' %}active{% endif %}"
+                            href="#register" data-bs-toggle="tab" role="tab">
                             Sign Up
                         </a>
                     </li>
                 </ul>
-
                 <div class="tab-content">
 
                     <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" id="login">
@@ -76,7 +69,8 @@
                                 <input type="password" name="password" class="form-control form-control-lg custom-input"
                                     placeholder="Password" required>
                             </div>
-                            <button class="btn btn-danger btn-lg w-100 fw-bold shadow-lg rounded-pill hover-effect login-btn">
+                            <button
+                                class="btn btn-danger btn-lg w-100 fw-bold shadow-lg rounded-pill hover-effect login-btn">
                                 Login Now
                             </button>
                         </form>
@@ -124,7 +118,8 @@
                                         placeholder="Confirm Password" required>
                                 </div>
                             </div>
-                            <button class="btn btn-success btn-lg w-100 mt-4 fw-bold shadow-lg rounded-pill hover-effect register-btn">
+                            <button
+                                class="btn btn-success btn-lg w-100 mt-4 fw-bold shadow-lg rounded-pill hover-effect register-btn">
                                 Create Account
                             </button>
                         </form>
@@ -143,60 +138,118 @@
 {% block extra_css %}
 <style>
     #authTabs .nav-link {
-        color: #ff9999 !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        backdrop-filter: blur(10px);
-        border: 2px solid #dc3545 !important;
-    }
-
-    #authTabs .nav-link.active {
-        color: white !important;
-        background: linear-gradient(135deg, #dc3545, #c82333) !important;
-        border: 3px solid white !important;
-        transform: translateY(-8px) scale(1.08) !important;
-        box-shadow: 0 20px 40px rgba(220, 53, 69, 0.7) !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        color: inherit !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        transform: none !important;
     }
 
     #authTabs .nav-link:not(.active) {
-        background: rgba(30, 30, 30, 0.8) !important;
-        border: 2px solid #dc3545 !important;
+        background: rgba(30, 30, 40, 0.95) !important;
+        color: #cccccc !important;
+        border: 2px solid #666 !important;
+        backdrop-filter: blur(12px);
+        transition: all 0.4s ease;
     }
 
     #authTabs .nav-link:not(.active):hover {
+        background: rgba(220, 53, 69, 0.4) !important;
         color: white !important;
-        background: rgba(220, 53, 69, 0.3) !important;
-        border-color: #ff6b6b !important;
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4) !important;
+        border-color: #dc3545 !important;
+        transform: translateY(-6px) !important;
+        box-shadow: 0 15px 40px rgba(220, 53, 69, 0.5) !important;
     }
 
-    .custom-input::placeholder { 
-        color: #ff9999 !important; 
-        font-weight: 500; 
-        opacity: 0.8;
-    }
-    
-    .custom-input {
-        background: rgba(20, 20, 20, 0.9) !important;
-        border: 2px solid #444 !important;
+    #authTabs .nav-link[href="#login"].active,
+    #authTabs .nav-link[href="#login"][aria-selected="true"] {
+        background: linear-gradient(135deg, #dc3545, #b02a37) !important;
+        background-color: #dc3545 !important;
         color: white !important;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
+        border: 3px solid white !important;
+        box-shadow:
+            0 20px 50px rgba(220, 53, 69, 0.7),
+            0 0 30px rgba(220, 53, 69, 0.5) !important;
+        transform: translateY(-10px) scale(1.07) !important;
+        animation: loginPulse 3s infinite;
+        position: relative;
+        z-index: 10;
     }
-    
+
+    #authTabs .nav-link[href="#register"].active,
+    #authTabs .nav-link[href="#register"][aria-selected="true"] {
+        background: linear-gradient(135deg, #28a745, #20c997) !important;
+        background-color: #28a745 !important;
+        color: white !important;
+        border: 3px solid white !important;
+        box-shadow:
+            0 20px 50px rgba(40, 167, 69, 0.7),
+            0 0 30px rgba(40, 167, 69, 0.5) !important;
+        transform: translateY(-10px) scale(1.07) !important;
+        animation: registerPulse 3s infinite;
+    }
+    @keyframes loginPulse {
+        0%,
+        100% {
+            box-shadow: 0 20px 50px rgba(220, 53, 69, 0.7), 0 0 30px rgba(220, 53, 69, 0.5);
+        }
+        50% {
+            box-shadow: 0 25px 60px rgba(220, 53, 69, 0.9), 0 0 40px rgba(220, 53, 69, 0.7);
+        }
+    }
+    @keyframes registerPulse {
+        0%,
+        100% {
+            box-shadow: 0 20px 50px rgba(40, 167, 69, 0.7), 0 0 30px rgba(40, 167, 69, 0.5);
+        }
+        50% {
+            box-shadow: 0 25px 60px rgba(40, 167, 69, 0.9), 0 0 40px rgba(40, 167, 69, 0.7);
+        }
+    }
+    #authTabs .nav-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.8s;
+        z-index: -1;
+        border-radius: 50px;
+    }
+    #authTabs .nav-link:hover::before,
+    #authTabs .nav-link.active::before {
+        left: 100%;
+    }
+
+    .custom-input {
+        background: rgba(25, 25, 35, 0.9) !important;
+        border: 2px solid #555 !important;
+        color: white !important;
+        backdrop-filter: blur(10px);
+        transition: all 0.35s ease;
+    }
+
+    .custom-input::placeholder {
+        color: #ff8c8c !important;
+        font-weight: 500;
+        opacity: 0.9;
+    }
+
     .custom-input:focus {
         border-color: #dc3545 !important;
         box-shadow: 0 0 0 0.3rem rgba(220, 53, 69, 0.3) !important;
-        background: rgba(30, 30, 30, 0.9) !important;
-        transform: translateY(-2px);
+        background: rgba(35, 35, 45, 0.95) !important;
+        transform: translateY(-3px);
+        color: white;
     }
 
-    /* تحسين أزرار التسجيل والدخول */
     .login-btn {
         background: linear-gradient(135deg, #dc3545, #c82333) !important;
         border: 2px solid #ff6b6b !important;
-        color: white !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.4s ease !important;
         position: relative;
         overflow: hidden;
     }
@@ -204,102 +257,108 @@
     .register-btn {
         background: linear-gradient(135deg, #28a745, #20c997) !important;
         border: 2px solid #51cf66 !important;
-        color: white !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.4s ease !important;
         position: relative;
         overflow: hidden;
     }
 
-    .hover-effect:hover {
+    .login-btn:hover,
+    .register-btn:hover {
         transform: translateY(-8px) scale(1.05) !important;
-        box-shadow: 
-            0 25px 50px rgba(220, 53, 69, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4) !important;
         border-color: white !important;
+    }
+
+    .login-btn:hover {
+        box-shadow: 0 25px 50px rgba(220, 53, 69, 0.5) !important;
     }
 
     .register-btn:hover {
-        box-shadow: 
-            0 25px 50px rgba(40, 167, 69, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        border-color: white !important;
+        box-shadow: 0 25px 50px rgba(40, 167, 69, 0. cryptic5) !important;
     }
 
-    .login-btn::before,
-    .register-btn::before {
+    .login-btn::after,
+    .register-btn::after {
         content: '';
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transition: left 0.6s;
     }
 
-    .login-btn:hover::before,
-    .register-btn:hover::before {
+    .login-btn:hover::after,
+    .register-btn:hover::after {
         left: 100%;
     }
 
     .alert {
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
     }
 
     .alert-success {
-        background: rgba(40, 167, 69, 0.2) !important;
-        border-color: #28a745 !important;
-        color: #b2f2bb !important;
+        background: rgba(40, 167, 69, 0.25) !important;
+        color: #d4edda !important;
+        border-color: #28a745;
     }
 
     .alert-danger {
-        background: rgba(220, 53, 69, 0.2) !important;
-        border-color: #dc3545 !important;
-        color: #ffa8a8 !important;
+        background: rgba(220, 53, 69, 0.25) !important;
+        color: #f8d7da !important;
+        border-color: #dc3545;
     }
 
     .alert-warning {
-        background: rgba(255, 193, 7, 0.2) !important;
-        border-color: #ffc107 !important;
-        color: #ffec99 !important;
+        background: rgba(255, 193, 7, 0.25) !important;
+        color: #fff3cd !important;
+        border-color: #ffc107;
     }
 
     .bg-dark.bg-opacity-95 {
+        background: rgba(10, 10, 15, 0.95) !important;
         backdrop-filter: blur(20px);
-        background: rgba(10, 10, 10, 0.95) !important;
         border: 2px solid #dc3545;
-        box-shadow: 
-            0 0 50px rgba(220, 53, 69, 0.3),
+        box-shadow:
+            0 0 60px rgba(220, 53, 69, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
     }
 
     .tab-pane {
-        animation: fadeIn 0.5s ease-in-out;
+        animation: fadeInUp 0.6s ease-out;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
 
-    input[type="file"].custom-input {
-        padding: 8px;
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     input[type="file"].custom-input::file-selector-button {
         background: #dc3545;
         color: white;
         border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        margin-right: 10px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
         transition: all 0.3s ease;
+        margin-right: 12px;
     }
 
     input[type="file"].custom-input::file-selector-button:hover {
         background: #c82333;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.4);
     }
 </style>
 {% endblock %}

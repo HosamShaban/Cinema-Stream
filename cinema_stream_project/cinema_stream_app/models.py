@@ -4,6 +4,7 @@ import bcrypt
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.db.models import Avg
 from django.forms import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -51,6 +52,13 @@ class Movie(models.Model):
                 return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
         
         return '/static/images/default_poster.jpg'
+    
+    def update_rating(self):
+        avg = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        self.overall_rating = round(avg, 1) if avg is not None else 0.0
+        self.rating_count = self.reviews.count()
+        self.save()
+        print(f"Updated movie rating: {self.overall_rating} from {self.rating_count} reviews")
 
 
 class Series(models.Model):
@@ -81,6 +89,12 @@ class Series(models.Model):
         elif self.poster_path:
             return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
         return '/static/images/default_poster.jpg'
+    
+    def update_rating(self):
+        avg = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        self.overall_rating = round(avg, 1) if avg is not None else 0.0
+        self.save()
+        print(f"Updated series rating: {self.overall_rating} from {self.reviews.count()} reviews")
 
 
 class UserProfile(models.Model):
@@ -106,6 +120,27 @@ class Review(models.Model):
 
     class Meta:
         unique_together = [('movie', 'user'), ('series', 'user')]
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        
+        super().save(*args, **kwargs)
+        
+        if self.movie:
+            self.movie.update_rating()
+        elif self.series:
+            self.series.update_rating()
+    
+    def delete(self, *args, **kwargs):
+        movie = self.movie
+        series = self.series
+        
+        super().delete(*args, **kwargs)
+        
+        if movie:
+            movie.update_rating()
+        elif series:
+            series.update_rating()    
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
