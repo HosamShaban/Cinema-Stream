@@ -506,6 +506,9 @@ def api_post_review(request):
                 defaults={'rating': rating, 'comment': comment}
             )
             print(f"Series Review {'created' if created else 'updated'} → ID: {review.id}")
+            
+            content.update_rating()
+            
         else:
             content = models.Movie.objects.get(slug=slug)
             review, created = models.Review.objects.update_or_create(
@@ -514,12 +517,16 @@ def api_post_review(request):
                 defaults={'rating': rating, 'comment': comment}
             )
             print(f"Movie Review {'created' if created else 'updated'} → ID: {review.id}")
+            
+            content.update_rating()
 
         return JsonResponse({
             'success': True,
             'message': 'Review submitted successfully!',
             'rating': review.rating,
             'comment': review.comment,
+            'overall_rating': float(content.overall_rating),
+            'reviews_count': content.reviews.count()
         })
 
     except models.Series.DoesNotExist:
@@ -532,8 +539,7 @@ def api_post_review(request):
         print("Error in api_post_review:", e)
         import traceback
         traceback.print_exc()
-        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500)
-    
+        return JsonResponse({'success': False, 'error': 'Internal server error'}, status=500)   
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):
