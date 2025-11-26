@@ -76,7 +76,6 @@
     background-color: #c82333 !important;
   }
   
-  /* تنسيق اقتراحات البحث */
   .search-suggestions {
     background: #1a1a1a !important;
     border: 1px solid #444;
@@ -96,7 +95,6 @@
     color: white;
   }
   
-  /* تحسين responsive */
   @media (max-width: 992px) {
     .search-form {
       min-width: 100%;
@@ -123,7 +121,6 @@
   
 <nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container">
-    <!-- الشعار على اليسار -->
     <i class="fa-solid fa-film fa-lg me-2" style="color:white;"></i>
     <a class="navbar-brand fw-bold" href="/">{% block brand %}Cinema Stream{% endblock %}</a>
     
@@ -132,7 +129,6 @@
     </button>
     
     <div class="collapse navbar-collapse" id="navcollapse">
-      <!-- البحث في المنتصف -->
       <form class="d-flex search-form mx-auto position-relative" action="{% url 'browse' %}" method="get" id="searchForm" style="max-width: 500px; width: 100%;">
         <div class="input-group">
           <input name="q" 
@@ -148,7 +144,6 @@
           </button>
         </div>
 
-        <!-- Dropdown الاقتراحات -->
         <div class="position-absolute top-100 start-0 end-0 mt-1 shadow-lg rounded-3 overflow-hidden border border-secondary" 
              style="z-index: 9999; display: none; max-height: 70vh; background: #141414 !important;" 
              id="searchSuggestions">
@@ -160,7 +155,6 @@
         </div>
       </form>
 
-      <!-- جميع الروابط على اليمين -->
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
           <a class="nav-link" href="{% url 'home' %}">
