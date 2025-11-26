@@ -8,6 +8,7 @@ from django.db.models import Avg
 from django.forms import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.hashers import check_password
 
 class Genre(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -235,8 +236,8 @@ def authenticate_user(email, password):
     try:
         user = User.objects.filter(email=email).first()
         if user:
-            authenticated_user = authenticate(username=user.username, password=password)
-            return authenticated_user
+            if check_password(password, user.password):
+                return user
         return None
     except Exception as e:
         print(f"Authentication error: {e}")
