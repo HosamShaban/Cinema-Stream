@@ -89,6 +89,12 @@ class Series(models.Model):
         elif self.poster_path:
             return f"https://image.tmdb.org/t/p/w500{self.poster_path}"
         return '/static/images/default_poster.jpg'
+    
+    def update_rating(self):
+        avg = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        self.overall_rating = round(avg, 1) if avg is not None else 0.0
+        self.save()
+        print(f"Updated series rating: {self.overall_rating} from {self.reviews.count()} reviews")
 
 
 class UserProfile(models.Model):
