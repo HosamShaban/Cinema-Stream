@@ -423,11 +423,8 @@ def api_delete_review(request, review_id):
         series = review.series
         
         review.delete()
-        print("Review deleted successfully")
-
-        if movie:
-            models.update_movie_rating(movie)
-            print("Movie rating updated")
+        
+        print("Review deleted successfully and rating updated automatically")
 
         return JsonResponse({
             'success': True, 
