@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404, render , redirect
 from django.core.paginator import Paginator
 from django.contrib import messages
+from .utils.tmdb import get_trailer_url
 from . import models
 import json
 from django.db.models import Q
@@ -173,6 +174,12 @@ def movie_detail(request, slug):
         user = request.user
         is_fav = models.Favorite.objects.filter(user=user, movie=movie).exists()
         user_review = movie.reviews.filter(user=user).first()
+
+    if not movie.trailer_url and movie.tmdb_id:
+        trailer = get_trailer_url(movie.tmdb_id, content_type='movie')
+        if trailer:
+            movie.trailer_url = trailer
+            movie.save(update_fields=['trailer_url'])    
 
     context = {
         'movie': movie,
