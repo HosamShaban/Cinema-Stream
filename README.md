@@ -9,7 +9,9 @@ Watch, rate, review, and save your favorite movies & series – all in one beaut
 ![PostgreSQL](https://img.shields.io/badge/SQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
 
+
 <img width="1440" height="723" alt="Screenshot 2025-11-27 at 4 01 30 PM" src="https://github.com/user-attachments/assets/2048b5d0-9a75-42e5-924e-31cca0e87263" />
+
 
 
 Live Site: https://cinema-stream-web.fly.dev  
