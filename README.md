@@ -1,6 +1,6 @@
 # Cinema Stream
 
-Cinema Stream is a online movie and TV series streaming web application built with Django that allows users to register, browse, search, watch trailers, save favorites, write reviews, and manage their profile. The platform provides a modern, responsive, Netflix-inspired experience while remaining lightweight and secure. The application demonstrates core Django concepts (authentication, models, class-based views, forms, admin customization, REST API, AJAX, security, and deployment) in a real-world context.
+Cinema Stream is a online movie and TV series streaming web application built with Django that allows users to register, browse, search, save favorites, write reviews, and manage their profile. The platform provides a modern, responsive, Netflix-inspired experience while remaining lightweight and secure. The application demonstrates core Django concepts (authentication, models, class-based views, forms, admin customization, REST API, AJAX, security, and deployment) in a real-world context.
 Watch, rate, review, and save your favorite movies & series – all in one beautiful, responsive, and lightning-fast web app!
 
 ![Django](https://img.shields.io/badge/Django-5.0+-092E20?style=for-the-badge&logo=django&logoColor=white)
