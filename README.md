@@ -18,7 +18,7 @@ Live Site: https://cinema-stream-web.fly.dev
 Data provided by [The Movie Database (TMDB)](https://www.themoviedb.org)  
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 
-I integrated The Movie Database (TMDB) public API – which is free, legal, and officially allows developers to use it in non-commercial projects with proper attribution.I never scraped any website (which is illegal), and I respected TMDB's rate limits and terms of use.
+Integrated The Movie Database (TMDB) public API – which is free, legal, and officially allows developers to use it in non-commercial projects with proper attribution.I never scraped any website (which is illegal), and I respected TMDB's rate limits and terms of use.
 All API calls go through a dedicated service module with error handling and timeout.
 For production or if the app goes public, we can easily switch to cached data, paid API tier, or self-hosted content – the architecture supports both.
 
