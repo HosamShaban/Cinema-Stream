@@ -1,7 +1,6 @@
 # Cinema Stream
 
-A Netflix-inspired movie & TV series streaming platform built with Django
-
+Cinema Stream is a online movie and TV series streaming web application built with Django that allows users to register, browse, search, watch trailers, save favorites, write reviews, and manage their profile. The platform provides a modern, responsive, Netflix-inspired experience while remaining lightweight and secure. The application demonstrates core Django concepts (authentication, models, class-based views, forms, admin customization, REST API, AJAX, security, and deployment) in a real-world context.
 Watch, rate, review, and save your favorite movies & series – all in one beautiful, responsive, and lightning-fast web app!
 
 ![Django](https://img.shields.io/badge/Django-5.0+-092E20?style=for-the-badge&logo=django&logoColor=white)
@@ -12,6 +11,14 @@ Watch, rate, review, and save your favorite movies & series – all in one beaut
 
 <img width="1440" height="723" alt="Screenshot 2025-11-27 at 4 01 30 PM" src="https://github.com/user-attachments/assets/2048b5d0-9a75-42e5-924e-31cca0e87263" />
 
+
+Live Site: https://cinema-stream-web.fly.dev  
+Data provided by [The Movie Database (TMDB)](https://www.themoviedb.org)  
+This product uses the TMDB API but is not endorsed or certified by TMDB.
+
+I integrated The Movie Database (TMDB) public API – which is free, legal, and officially allows developers to use it in non-commercial projects with proper attribution.I never scraped any website (which is illegal), and I respected TMDB's rate limits and terms of use.
+All API calls go through a dedicated service module with error handling and timeout.
+For production or if the app goes public, we can easily switch to cached data, paid API tier, or self-hosted content – the architecture supports both.
 
 
 ## Features
