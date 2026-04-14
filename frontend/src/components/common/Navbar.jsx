@@ -1,17 +1,15 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom"
 
-const Navbar = () => {
+function Navbar() {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-      <div className="container-fluid">
-        <Link className="navbar-brand fw-bold fs-3" to="/">🎬 Cinema Stream</Link>
-        <div className="navbar-nav ms-auto">
-          <Link className="nav-link mx-2" to="/">Home</Link>
-          <Link className="nav-link mx-2" to="/browse">Browse</Link>
-          <Link className="nav-link mx-2" to="/profile">Profile</Link>
-          <Link className="nav-link mx-2 btn btn-outline-light" to="/login">Login</Link>
-        </div>
-      </div>
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+      <Link className="navbar-brand" to="/">Cinema Stream</Link>
+      <ul className="navbar-nav ms-auto">
+        <li className="nav-item"><Link className="nav-link" to="/">Home</Link></li>
+        <li className="nav-item"><Link className="nav-link" to="/browse">Browse</Link></li>
+        <li className="nav-item"><Link className="nav-link" to="/profile">Profile</Link></li>
+        <li className="nav-item"><Link className="nav-link" to="/login">Login</Link></li>
+      </ul>
     </nav>
   )
 }

@@ -1,4 +1,13 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 function App() {
-  return <h1 style={{color:"white"}}>Cinema Stream Frontend ✅</h1>
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<h1>Home ✅</h1>} />
+        <Route path="/browse" element={<h1>Browse ✅</h1>} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
-export default App
+export default App;
