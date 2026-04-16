@@ -44,6 +44,8 @@ CSRF_TRUSTED_ORIGINS = [
 
 INSTALLED_APPS = [
     'cinema_stream_app',
+    'corsheaders',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
