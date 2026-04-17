@@ -400,7 +400,7 @@ def api_movies(request):
             'title': m.title,
             'slug': m.slug,
             'description': m.description,
-            'poster': m.get_poster_url, # استدعاء الـ @property من الموديل
+            'poster': m.get_poster_url, 
             'rating': float(m.overall_rating),
             'year': m.release_year,
         })
