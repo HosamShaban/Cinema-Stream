@@ -293,7 +293,6 @@ def api_browse(request):
         else:
             results.append(series_to_dict(item))
 
-    # Genres لعرضها في الـ filter
     genres = [{'name': g.name, 'slug': g.slug} for g in models.Genre.objects.all()[:30]]
 
     return JsonResponse({
