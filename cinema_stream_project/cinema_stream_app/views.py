@@ -407,7 +407,6 @@ def api_movies(request):
     return JsonResponse({'results': data})
 
 def api_trending(request):
-    # سنجلب أعلى الأفلام تقييماً أو الأكثر مراجعة كما في الموديل
     trending = models.Movie.objects.all().order_by('-overall_rating')[:10]
     data = []
     for m in trending:
