@@ -975,7 +975,7 @@ def api_user_reviews(request):
             'year':       m.release_year,
         })
 
-    # Series reviews
+    
     for review in models.Review.objects.filter(user=user, series__isnull=False).select_related('series'):
         s = review.series
         reviews.append({
