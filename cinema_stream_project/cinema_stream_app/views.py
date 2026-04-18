@@ -12,6 +12,8 @@ import json
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from itertools import chain
+
 
 def home(request):
     
@@ -273,7 +275,6 @@ def api_browse(request):
             'poster_path': s.poster_path,
         }
 
-    from itertools import chain
     all_items = sorted(
         list(movies.distinct()) + list(series.distinct()),
         key=lambda x: x.overall_rating,
