@@ -111,6 +111,64 @@ def home(request):
 
     return render(request, 'home.html', context)
 
+
+
+def api_home(request):
+    """يرجع كل بيانات الـ home page — movies + series"""
+
+    def movie_dict(m):
+        return {
+            'id': m.id, 'title': m.title, 'slug': m.slug,
+            'poster': m.get_poster_url,
+            'rating': float(m.overall_rating),
+            'year': m.release_year,
+            'content_type': getattr(m, 'content_type', 'movie'),
+            'duration': getattr(m, 'duration', None),
+            'poster_path': m.poster_path,
+        }
+
+    def series_dict(s):
+        return {
+            'id': s.id, 'title': s.title, 'slug': s.slug,
+            'poster': s.get_poster_url,
+            'rating': float(s.overall_rating),
+            'year': s.first_air_date,
+            'content_type': 'series',
+            'seasons_count': s.seasons_count,
+            'poster_path': s.poster_path,
+        }
+
+    # Recently added (movies + series sorted by year)
+    recent_movies = list(models.Movie.objects.order_by('-created_at')[:15])
+    recent_series = list(models.Series.objects.order_by('-created_at')[:15])
+    recently_added = sorted(
+        recent_movies + recent_series,
+        key=lambda x: x.overall_rating,
+        reverse=True
+    )[:20]
+
+    # Trending (movies + series)
+    trend_movies = list(models.Movie.objects.filter(release_year__gte=2022).order_by('-overall_rating')[:10])
+    trend_series = list(models.Series.objects.filter(first_air_date__gte=2022).order_by('-overall_rating')[:10])
+    trending = sorted(trend_movies + trend_series, key=lambda x: x.overall_rating, reverse=True)[:20]
+
+    # Top English movies
+    top_movies = list(models.Movie.objects.filter(language__icontains='en').order_by('-overall_rating')[:8])
+
+    # Top English series
+    top_series = list(models.Series.objects.filter(language__icontains='en').order_by('-overall_rating')[:8])
+
+    def to_dict(item):
+        return series_dict(item) if hasattr(item, 'seasons_count') else movie_dict(item)
+
+    return JsonResponse({
+        'recently_added': [to_dict(i) for i in recently_added],
+        'trending':       [to_dict(i) for i in trending],
+        'top_movies':     [movie_dict(m) for m in top_movies],
+        'top_series':     [series_dict(s) for s in top_series],
+    })
+
+
 def browse(request):
     genres = models.Genre.objects.all()
     query = request.GET.get('q')
@@ -163,6 +221,96 @@ def browse(request):
     }
     
     return render(request, 'browse.html', context)
+
+
+def api_browse(request):
+    """يرجع movies + series مع filters — بديل لـ browse view"""
+    query        = request.GET.get('q',     '').strip()
+    genre        = request.GET.get('genre', '').strip()
+    year         = request.GET.get('year',  '').strip()
+    content_type = request.GET.get('type',  'all')
+    page_num     = int(request.GET.get('page', 1))
+    per_page     = 20
+
+    movies = models.Movie.objects.all()
+    series = models.Series.objects.all()
+
+    if query:
+        movies = movies.filter(title__icontains=query)
+        series = series.filter(title__icontains=query)
+
+    if genre:
+        movies = movies.filter(genres__slug=genre)
+        series = series.filter(genres__slug=genre)
+
+    if year:
+        try:
+            movies = movies.filter(release_year=int(year))
+            series = series.filter(first_air_date=int(year))
+        except ValueError:
+            pass
+
+    if content_type == 'movie':
+        series = series.none()
+    elif content_type == 'series':
+        movies = movies.none()
+
+    def movie_to_dict(m):
+        return {
+            'id': m.id, 'title': m.title, 'slug': m.slug,
+            'poster': m.get_poster_url,
+            'rating': float(m.overall_rating),
+            'year': m.release_year,
+            'content_type': 'movie',
+            'duration': m.duration,
+            'genres': [g.name for g in m.genres.all()[:2]],
+            'poster_path': m.poster_path,
+        }
+
+    def series_to_dict(s):
+        return {
+            'id': s.id, 'title': s.title, 'slug': s.slug,
+            'poster': s.get_poster_url,
+            'rating': float(s.overall_rating),
+            'year': s.first_air_date,
+            'content_type': 'series',
+            'seasons_count': s.seasons_count,
+            'episodes_count': s.episodes_count,
+            'genres': [g.name for g in s.genres.all()[:2]],
+            'poster_path': s.poster_path,
+        }
+
+    from itertools import chain
+    all_items = sorted(
+        list(movies.distinct()) + list(series.distinct()),
+        key=lambda x: x.overall_rating,
+        reverse=True
+    )
+
+    total   = len(all_items)
+    start   = (page_num - 1) * per_page
+    end     = start + per_page
+    page    = all_items[start:end]
+
+    results = []
+    for item in page:
+        if hasattr(item, 'duration'):
+            results.append(movie_to_dict(item))
+        else:
+            results.append(series_to_dict(item))
+
+    # Genres لعرضها في الـ filter
+    genres = [{'name': g.name, 'slug': g.slug} for g in models.Genre.objects.all()[:30]]
+
+    return JsonResponse({
+        'results':    results,
+        'total':      total,
+        'page':       page_num,
+        'has_next':   end < total,
+        'genres':     genres,
+    })
+
+
 
 def movie_detail(request, slug):
     movie = get_object_or_404(models.Movie, slug=slug)
@@ -248,6 +396,38 @@ def register(request):
             return redirect('home')
 
     return render(request, 'auth.html', {'active_tab': active_tab})
+
+
+def api_movies(request):
+    movies = models.Movie.objects.all().order_by('-created_at')
+    data = []
+    for m in movies:
+        data.append({
+            'id': m.id,
+            'title': m.title,
+            'slug': m.slug,
+            'description': m.description,
+            'poster': m.get_poster_url, # استدعاء الـ @property من الموديل
+            'rating': float(m.overall_rating),
+            'year': m.release_year,
+        })
+    return JsonResponse({'results': data})
+
+def api_trending(request):
+    # سنجلب أعلى الأفلام تقييماً أو الأكثر مراجعة كما في الموديل
+    trending = models.Movie.objects.all().order_by('-overall_rating')[:10]
+    data = []
+    for m in trending:
+        data.append({
+            'id': m.id,
+            'title': m.title,
+            'slug': m.slug,
+            'description': m.description,
+            'poster': m.get_poster_url, 
+            'rating': float(m.overall_rating),
+            'year': m.release_year,
+        })
+    return JsonResponse({'results': data})
 
 def logout_view(request):
     from django.contrib.auth import logout
@@ -564,7 +744,309 @@ def update_all_ratings(request):
     return JsonResponse({
         'success': True,
         'message': f'Updated {updated_movies} movies and {updated_series} series'
-    })      
+    })     
+
+# أضف هذين الـ view في نهاية views.py
+
+@csrf_exempt
+def api_login(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        email    = data.get('email', '').strip()
+        password = data.get('password', '')
+
+        user = models.authenticate_user(email, password)
+        if user:
+            from django.contrib.auth import login
+            login(request, user)
+            return JsonResponse({
+                'success': True,
+                'user': {
+                    'id':         user.id,
+                    'email':      user.email,
+                    'first_name': user.first_name,
+                    'last_name':  user.last_name,
+                    'username':   user.username,
+                }
+            })
+        return JsonResponse({'success': False, 'error': 'Invalid email or password'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_register(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+
+        # نبني postData بنفس الشكل اللي register_validator يتوقعه
+        post_data = {
+            'first_name':    data.get('first_name', ''),
+            'last_name':     data.get('last_name', ''),
+            'email':         data.get('email', ''),
+            'password':      data.get('password', ''),
+            'confirm_pw':    data.get('password', ''),  # React بيبعت password مرة واحدة
+            'date_of_birth': data.get('date_of_birth', ''),
+        }
+
+        errors = models.register_validator(post_data)
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+        user = models.create_user(post_data)
+        from django.contrib.auth import login
+        login(request, user)
+        return JsonResponse({
+            'success': True,
+            'user': {
+                'id':         user.id,
+                'email':      user.email,
+                'first_name': user.first_name,
+                'last_name':  user.last_name,
+                'username':   user.username,
+            }
+        })
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_me(request):
+    """يرجع بيانات المستخدم الحالي"""
+    if request.user.is_authenticated:
+        return JsonResponse({
+            'success': True,
+            'user': {
+                'id':         request.user.id,
+                'email':      request.user.email,
+                'first_name': request.user.first_name,
+                'last_name':  request.user.last_name,
+                'username':   request.user.username,
+            }
+        })
+    return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+def api_movie_detail(request, slug):
+    try:
+        m = models.Movie.objects.get(slug=slug)
+        return JsonResponse({
+            'id': m.id, 'title': m.title, 'slug': m.slug,
+            'description': m.description, 'get_poster_url': m.get_poster_url,
+            'backdrop_path': m.backdrop_path, 'overall_rating': float(m.overall_rating),
+            'release_year': m.release_year, 'duration': m.duration,
+            'language': m.language, 'trailer_url': m.trailer_url,
+            'content_type': m.content_type,
+        })
+    except models.Movie.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+
+def api_series_detail(request, slug):
+    try:
+        s = models.Series.objects.get(slug=slug)
+        return JsonResponse({
+            'id': s.id, 'title': s.title, 'slug': s.slug,
+            'description': s.description, 'get_poster_url': s.get_poster_url,
+            'backdrop_path': s.backdrop_path, 'overall_rating': float(s.overall_rating),
+            'first_air_date': s.first_air_date, 'seasons_count': s.seasons_count,
+            'language': s.language, 'trailer_url': s.trailer_url,
+            'content_type': 'series',
+        })
+    except models.Series.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+@login_required
+def api_my_reviews(request):
+    reviews = models.Review.objects.filter(user=request.user).select_related('movie', 'series')
+
+    data = []
+
+    for r in reviews:
+        if r.movie:
+            content = r.movie
+            poster = content.get_poster_url
+            content_type = 'movie'
+        else:
+            content = r.series
+            poster = content.get_poster_url
+            content_type = 'series'
+
+        data.append({
+            'id': r.id,
+            'rating': r.rating,
+            'comment': r.comment,
+            'title': content.title,
+            'slug': content.slug,
+            'type': content_type,
+            'poster': poster,
+        })
+
+    return JsonResponse({
+        'success': True,
+        'reviews': data
+    })
+
+
+# أضف في views.py
+
+@csrf_exempt
+def api_edit_profile(request):
+    """يحدث بيانات الـ profile"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    user    = request.user
+    profile = user.profile
+
+    first_name   = request.POST.get('first_name', '').strip()
+    last_name    = request.POST.get('last_name',  '').strip()
+    email        = request.POST.get('email',      '').strip()
+    avatar_file  = request.FILES.get('avatar')
+
+    errors = {}
+    if not first_name: errors['first_name'] = 'First name is required.'
+    if not last_name:  errors['last_name']  = 'Last name is required.'
+    if not email:      errors['email']      = 'Email is required.'
+
+    if email and User.objects.exclude(pk=user.pk).filter(email=email).exists():
+        errors['email'] = 'This email is already taken.'
+
+    if errors:
+        return JsonResponse({'success': False, 'error': ' '.join(errors.values())}, status=400)
+
+    user.first_name = first_name
+    user.last_name  = last_name
+    user.email      = email
+    if avatar_file:
+        profile.avatar = avatar_file
+        profile.save()
+    user.save()
+
+    return JsonResponse({
+        'success': True,
+        'user': {
+            'id':         user.id,
+            'email':      user.email,
+            'first_name': user.first_name,
+            'last_name':  user.last_name,
+            'username':   user.username,
+        }
+    })
+
+
+
+
+def api_reviews(request):
+    slug = request.GET.get('slug')
+    content_type = request.GET.get('content_type', 'movie')
+    if not slug:
+        return JsonResponse({'results': []})
+    if content_type == 'series':
+        reviews = models.Review.objects.filter(series__slug=slug).select_related('user')
+    else:
+        reviews = models.Review.objects.filter(movie__slug=slug).select_related('user')
+    data = [{
+        'id': r.id, 'rating': r.rating, 'comment': r.comment,
+        'created_at': r.created_at.isoformat(),
+        'user': {'id': r.user.id, 'username': r.user.username or r.user.email}
+    } for r in reviews]
+    return JsonResponse({'results': data})
+
+
+@csrf_exempt
+def api_user_reviews(request):
+    """يرجع reviews المستخدم الحالي مع بيانات الفيلم/المسلسل"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    user = request.user
+    reviews = []
+
+    # Movie reviews
+    for review in models.Review.objects.filter(user=user, movie__isnull=False).select_related('movie'):
+        m = review.movie
+        reviews.append({
+            'review': {
+                'id':         review.id,
+                'rating':     review.rating,
+                'comment':    review.comment,
+                'created_at': review.created_at.isoformat(),
+            },
+            'type':       'movie',
+            'title':      m.title,
+            'slug':       m.slug,
+            'poster_url': m.get_poster_url,
+            'year':       m.release_year,
+        })
+
+    # Series reviews
+    for review in models.Review.objects.filter(user=user, series__isnull=False).select_related('series'):
+        s = review.series
+        reviews.append({
+            'review': {
+                'id':         review.id,
+                'rating':     review.rating,
+                'comment':    review.comment,
+                'created_at': review.created_at.isoformat(),
+            },
+            'type':       'series',
+            'title':      s.title,
+            'slug':       s.slug,
+            'poster_url': s.get_poster_url,
+            'year':       s.first_air_date,
+        })
+
+    return JsonResponse({'success': True, 'reviews': reviews})
+
+
+@csrf_exempt
+def api_favorites(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    favs = models.Favorite.objects.filter(
+        user=request.user
+    ).select_related('movie', 'series')
+
+    movies = []
+    series = []
+
+    for fav in favs:
+        if fav.movie:
+            m = fav.movie
+            movies.append({
+                'id': m.id, 'title': m.title, 'slug': m.slug,
+                'poster': m.get_poster_url,
+                'rating': float(m.overall_rating),
+                'year': m.release_year,
+                'content_type': 'movie',
+            })
+        elif fav.series:
+            s = fav.series
+            series.append({
+                'id': s.id, 'title': s.title, 'slug': s.slug,
+                'poster': s.get_poster_url,
+                'rating': float(s.overall_rating),
+                'year': s.first_air_date,
+                'content_type': 'series',
+            })
+
+    return JsonResponse({'success': True, 'movies': movies, 'series': series})
+
+@csrf_exempt  
+def api_logout(request):
+    from django.contrib.auth import logout
+    logout(request)
+    return JsonResponse({'success': True})
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleFavoriteView(View):
@@ -631,3 +1113,6 @@ class ToggleFavoriteView(View):
             import traceback
             print(f"TRACEBACK: {traceback.format_exc()}")
             return JsonResponse({'success': False, 'error': 'Server error'}, status=500)
+        
+
+       

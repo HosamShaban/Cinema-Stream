@@ -30,15 +30,28 @@ SECRET_KEY = 'django-insecure-@o*q7_6k8n791^we4&d=4(xhatb%vm++j2xv!bnvs%aje%5nh2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CORS_ALLOW_CREDENTIALS = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = False
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://cinema-stream-web.fly.dev",
+]
+
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "cinema-stream-web.fly.dev",
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://cinema-stream-web.fly.dev",
-]
+
 
 # Application definition
 
@@ -55,9 +68,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
