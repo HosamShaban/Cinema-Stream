@@ -959,7 +959,6 @@ def api_user_reviews(request):
     user = request.user
     reviews = []
 
-    # Movie reviews
     for review in models.Review.objects.filter(user=user, movie__isnull=False).select_related('movie'):
         m = review.movie
         reviews.append({
