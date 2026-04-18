@@ -884,11 +884,9 @@ def api_my_reviews(request):
     })
 
 
-# أضف في views.py
 
 @csrf_exempt
 def api_edit_profile(request):
-    """يحدث بيانات الـ profile"""
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
 
@@ -955,7 +953,6 @@ def api_reviews(request):
 
 @csrf_exempt
 def api_user_reviews(request):
-    """يرجع reviews المستخدم الحالي مع بيانات الفيلم/المسلسل"""
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
 
