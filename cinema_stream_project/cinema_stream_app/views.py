@@ -14,7 +14,6 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 def home(request):
-    current_year = 2024
     
     recent_movies = models.Movie.objects.filter(
         release_year__gte=2023
@@ -114,7 +113,6 @@ def home(request):
 
 
 def api_home(request):
-    """يرجع كل بيانات الـ home page — movies + series"""
 
     def movie_dict(m):
         return {
@@ -138,7 +136,6 @@ def api_home(request):
             'poster_path': s.poster_path,
         }
 
-    # Recently added (movies + series sorted by year)
     recent_movies = list(models.Movie.objects.order_by('-created_at')[:15])
     recent_series = list(models.Series.objects.order_by('-created_at')[:15])
     recently_added = sorted(
@@ -147,15 +144,12 @@ def api_home(request):
         reverse=True
     )[:20]
 
-    # Trending (movies + series)
     trend_movies = list(models.Movie.objects.filter(release_year__gte=2022).order_by('-overall_rating')[:10])
     trend_series = list(models.Series.objects.filter(first_air_date__gte=2022).order_by('-overall_rating')[:10])
     trending = sorted(trend_movies + trend_series, key=lambda x: x.overall_rating, reverse=True)[:20]
 
-    # Top English movies
     top_movies = list(models.Movie.objects.filter(language__icontains='en').order_by('-overall_rating')[:8])
 
-    # Top English series
     top_series = list(models.Series.objects.filter(language__icontains='en').order_by('-overall_rating')[:8])
 
     def to_dict(item):
@@ -224,7 +218,6 @@ def browse(request):
 
 
 def api_browse(request):
-    """يرجع movies + series مع filters — بديل لـ browse view"""
     query        = request.GET.get('q',     '').strip()
     genre        = request.GET.get('genre', '').strip()
     year         = request.GET.get('year',  '').strip()
