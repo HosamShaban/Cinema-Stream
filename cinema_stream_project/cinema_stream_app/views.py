@@ -1101,6 +1101,3 @@ class ToggleFavoriteView(View):
             import traceback
             print(f"TRACEBACK: {traceback.format_exc()}")
             return JsonResponse({'success': False, 'error': 'Server error'}, status=500)
-        
-
-       
