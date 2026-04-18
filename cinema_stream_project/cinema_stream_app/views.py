@@ -738,7 +738,6 @@ def update_all_ratings(request):
         'message': f'Updated {updated_movies} movies and {updated_series} series'
     })     
 
-# أضف هذين الـ view في نهاية views.py
 
 @csrf_exempt
 def api_login(request):
