@@ -139,12 +139,12 @@ def api_home(request):
         }
 
     recent_movies = list(models.Movie.objects.order_by('-created_at')[:15])
-    recent_series = list(models.Series.objects.order_by('-created_at')[:15])
+    recent_series = list(models.Series.objects.order_by('-created_at')[:16])
     recently_added = sorted(
         recent_movies + recent_series,
         key=lambda x: x.overall_rating,
         reverse=True
-    )[:20]
+    )[:21]
 
     trend_movies = list(models.Movie.objects.filter(release_year__gte=2022).order_by('-overall_rating')[:10])
     trend_series = list(models.Series.objects.filter(first_air_date__gte=2022).order_by('-overall_rating')[:10])
@@ -808,16 +808,16 @@ def api_register(request):
 
 @csrf_exempt
 def api_me(request):
-    """يرجع بيانات المستخدم الحالي"""
     if request.user.is_authenticated:
         return JsonResponse({
             'success': True,
             'user': {
-                'id':         request.user.id,
-                'email':      request.user.email,
+                'id': request.user.id,
+                'email': request.user.email,
                 'first_name': request.user.first_name,
-                'last_name':  request.user.last_name,
-                'username':   request.user.username,
+                'last_name': request.user.last_name,
+                'username': request.user.username,
+                'avatar': request.user.profile.avatar.url if request.user.profile.avatar else None,
             }
         })
     return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
@@ -920,15 +920,16 @@ def api_edit_profile(request):
     user.save()
 
     return JsonResponse({
-        'success': True,
-        'user': {
-            'id':         user.id,
-            'email':      user.email,
-            'first_name': user.first_name,
-            'last_name':  user.last_name,
-            'username':   user.username,
-        }
-    })
+    'success': True,
+    'user': {
+        'id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'username': user.username,
+        'avatar': profile.avatar.url if profile.avatar else None,
+    }
+})
 
 
 
