@@ -809,15 +809,18 @@ def api_register(request):
 @csrf_exempt
 def api_me(request):
     if request.user.is_authenticated:
+        user = request.user
+        profile = getattr(user, 'profile', None)
         return JsonResponse({
             'success': True,
             'user': {
-                'id': request.user.id,
-                'email': request.user.email,
-                'first_name': request.user.first_name,
-                'last_name': request.user.last_name,
-                'username': request.user.username,
-                'avatar': request.user.profile.avatar.url if request.user.profile.avatar else None,
+                'id':         user.id,
+                'email':      user.email,
+                'first_name': user.first_name,
+                'last_name':  user.last_name,
+                'username':   user.username,
+                'date_joined': user.date_joined.isoformat(),
+                'avatar':     profile.avatar.url if profile and profile.avatar else None,
             }
         })
     return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
